@@ -4,6 +4,26 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <script>
+      (function() {
+        try {
+          var realFetch = window.fetch;
+          var fetchHandler = typeof realFetch === 'function' ? realFetch.bind(window) : realFetch;
+          Object.defineProperty(window, 'fetch', {
+            configurable: true,
+            enumerable: true,
+            get: function() {
+              return fetchHandler;
+            },
+            set: function(val) {
+              fetchHandler = val;
+            }
+          });
+        } catch (e) {
+          // Ignore
+        }
+      })();
+    </script>
     <title>MẬT MÃ SỬ VIỆT — Giải mật mã, Khám phá sử Việt</title>
     <meta name="description" content="Trò chơi phiêu lưu giải đố 2D lịch sử Việt Nam - Chương 1: Bí mật trên sông Bạch Đằng (năm 938)" />
     <!-- Fonts -->

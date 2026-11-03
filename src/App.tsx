@@ -7,6 +7,7 @@ import { SummaryScreen } from './components/screens/SummaryScreen';
 import { CoLoa3DScreen } from './components/screens/CoLoa3DScreen';
 import { CodexModal } from './components/common/CodexModal';
 import { CipherPuzzleModal } from './components/modals/CipherPuzzleModal';
+import { AmbientAudioPlayer } from './components/common/AmbientAudioPlayer';
 
 const GameRouter: React.FC = () => {
   const { progress } = useGame();
@@ -23,6 +24,8 @@ const GameRouter: React.FC = () => {
       <CodexModal />
       {/* Bàn Giải Mật Mã Cổ */}
       <CipherPuzzleModal />
+      {/* Trình phát nhạc nền Low-Fi Sử Việt */}
+      <AmbientAudioPlayer />
     </>
   );
 };

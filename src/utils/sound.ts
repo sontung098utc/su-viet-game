@@ -580,6 +580,30 @@ class SoundController {
       // Ignore
     }
   }
+
+  // Âm thanh báo sai khi giải mật mã hoặc chọn nhầm
+  public playError() {
+    const level = this.getEffectiveSfxGain(0.2);
+    if (level <= 0.001) return;
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(140, now);
+      osc.frequency.exponentialRampToValueAtTime(70, now + 0.22);
+      gain.gain.setValueAtTime(level, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.connect(gain);
+      gain.connect(this.ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.22);
+    } catch {
+      // Ignore
+    }
+  }
 }
 
 export const sound = new SoundController();

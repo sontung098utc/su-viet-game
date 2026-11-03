@@ -108,10 +108,10 @@ export const StartScreen: React.FC = () => {
           Bước qua <strong>Cổng Thời Không</strong>, tự tay tìm kiếm các mảnh ghép di sản bị thất lạc và phục dựng những trang sử vàng chói lọi của dân tộc!
         </p>
 
-        {/* HERO CARD: CHƯƠNG 1 (3D FPS) - CỔ LOA NỎ THẦN */}
+        {/* HERO CARD: CHƯƠNG 1 (THUẦN 3D - GÓC NHÌN 1 & 3) - CỔ LOA NỎ THẦN */}
         <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-950/80 via-lacquer to-amber-950/80 border-2 border-amber-400/80 shadow-2xl text-left max-w-lg mx-auto relative overflow-hidden backdrop-blur-md">
           <div className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-crimson text-amber-200 text-[10px] font-bold tracking-wider uppercase border border-amber-300 animate-pulse">
-            Chương 1 Mới • 3D Góc Nhìn Thứ Nhất
+            Chương 1 Chuẩn Sử • 3D Góc Nhìn 1 & 3
           </div>
           <div className="flex items-start gap-3">
             <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 flex items-center justify-center shrink-0 shadow-md border border-white/40">
@@ -122,7 +122,7 @@ export const StartScreen: React.FC = () => {
                 Cổ Loa — Nỏ Thần Kim Quy
               </h3>
               <p className="text-xs text-parchment-200/90 font-serif mt-1 leading-relaxed">
-                Khám phá thành ốc 3D, tìm 3 mảnh ghép cổ vật (Thân nỏ, Lẫy rùa vàng, Mũi tên đồng Cầu Vực), lắp ráp và giương nỏ thần bắn giặc!
+                Chuẩn <em>Đại Việt Sử Ký Toàn Thư</em>. Điều khiển chiến binh Âu Lạc đổi góc nhìn 1 & 3 [phím V], giải mật mã cổ vật, lò rèn đúc mũi tên đồng và nghe giọng đọc người dẫn truyện!
               </p>
             </div>
           </div>
@@ -131,7 +131,7 @@ export const StartScreen: React.FC = () => {
             className="mt-3.5 w-full flex items-center justify-center gap-2 py-3 px-5 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:brightness-110 text-lacquer font-bold text-sm shadow-lg transition-all active:scale-98"
           >
             <Sparkles className="w-4 h-4 text-crimson" />
-            <span>Khám Phá Thành Cổ Loa 3D (FPS)</span>
+            <span>Chơi Ngay: Thành Cổ Loa 3D (Góc nhìn 1 & 3)</span>
             <ArrowRight className="w-4 h-4 text-lacquer" />
           </button>
         </div>

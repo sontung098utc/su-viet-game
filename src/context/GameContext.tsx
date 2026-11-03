@@ -14,6 +14,7 @@ import type {
 import { storage, DEFAULT_USER_PROGRESS } from '../utils/storage';
 import { sound } from '../utils/sound';
 import { voiceManager } from '../utils/voiceManager';
+import { vietnameseAmbientMusic } from '../utils/vietnameseAmbientMusic';
 
 interface AdvanceQuestOptions {
   addItems?: InventoryItemId[];
@@ -83,6 +84,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     sound.setMixSettings(audioCfg);
     voiceManager.syncSettings(audioCfg);
+    vietnameseAmbientMusic.setMuted(!audioCfg.soundEnabled);
+    if (typeof audioCfg.bgmVolume === 'number') {
+      vietnameseAmbientMusic.setVolume(audioCfg.bgmVolume);
+    }
   }, [progress.audioSettings, progress.soundEnabled]);
 
   const updateProgress = useCallback((updater: (prev: UserProgress) => UserProgress) => {

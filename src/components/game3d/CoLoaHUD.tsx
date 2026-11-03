@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Compass, Crosshair, ArrowLeft, Target, BookOpen, Volume2, VolumeX, ShieldAlert } from 'lucide-react';
+import { Compass, Crosshair, ArrowLeft, Target, BookOpen, Volume2, VolumeX, ShieldAlert, Eye } from 'lucide-react';
 import type { CoLoaRelicId } from '../../types';
 import { CO_LOA_RELICS } from '../../data/chapterCoLoa';
 
@@ -11,6 +11,9 @@ interface CoLoaHUDProps {
   isCrossbowReady: boolean;
   isCrossbowAssembled: boolean;
   targetsHit: number;
+  cameraMode: 'FIRST_PERSON' | 'THIRD_PERSON';
+  onToggleCameraMode: () => void;
+  onOpenNarration: (actId?: string) => void;
   onInteractClick: () => void;
   onExitToMenu: () => void;
   onOpenCodex: () => void;
@@ -27,6 +30,9 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
   isCrossbowReady,
   isCrossbowAssembled,
   targetsHit,
+  cameraMode,
+  onToggleCameraMode,
+  onOpenNarration,
   onInteractClick,
   onExitToMenu,
   onOpenCodex,
@@ -37,6 +43,9 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
   // Virtual Joystick state for Mobile
   const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
   const [stickOffset, setStickOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+
+  // Trạng thái thu gọn / mở rộng bảng nhiệm vụ để màn hình chơi game luôn rộng rãi
+  const [isQuestCollapsed, setIsQuestCollapsed] = useState(false);
 
   const allRelicKeys: CoLoaRelicId[] = ['SHARD_CROSSBOW_STOCK', 'SHARD_TURTLE_TRIGGER', 'SHARD_BRONZE_ARROWS'];
 
@@ -72,12 +81,12 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-20 flex flex-col justify-between p-3 sm:p-5 overflow-hidden">
       {/* --- TOP BAR: COMPASS RADAR & QUEST PROGRESS --- */}
-      <div className="flex items-start justify-between gap-3 pointer-events-auto">
+      <div className="flex items-start justify-between gap-2 sm:gap-3 pointer-events-auto">
         {/* Back button & Title */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={onExitToMenu}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white text-xs font-semibold backdrop-blur-md transition-all shadow-md active:scale-95"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white text-xs font-semibold backdrop-blur-md transition-all shadow-md active:scale-95 cursor-pointer"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-amber-400" />
             <span className="hidden sm:inline">Quay lại</span>
@@ -85,12 +94,12 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
 
           <div className="px-3 py-1.5 rounded-full bg-black/60 border border-amber-500/40 text-amber-200 text-xs font-bold backdrop-blur-md flex items-center gap-1.5 shadow-md">
             <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-            <span>Âu Lạc • Thành Cổ Loa 3D</span>
+            <span>Âu Lạc • Cổ Loa 3D</span>
           </div>
         </div>
 
         {/* Dynamic 3D Radar Ribbon */}
-        <div className="hidden md:flex flex-col items-center">
+        <div className="hidden lg:flex flex-col items-center">
           <div className="w-64 h-8 px-3 rounded-full bg-black/70 border border-amber-500/50 backdrop-blur-md flex items-center justify-between text-[11px] font-mono text-amber-300 relative overflow-hidden">
             <div className="flex items-center gap-1">
               <Compass className="w-3.5 h-3.5 text-amber-400" />
@@ -108,18 +117,39 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
           </div>
         </div>
 
-        {/* Right side controls */}
-        <div className="flex items-center gap-2">
+        {/* Right side controls: Camera Toggle, Story Narration, Codex, Sound */}
+        <div className="flex items-center gap-1.5 sm:gap-2">
+          {/* Nút chuyển đổi Góc nhìn Thứ 3 / Thứ 1 (3rd / 1st Person) */}
+          <button
+            onClick={onToggleCameraMode}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/75 hover:bg-black/90 border border-amber-400/80 text-amber-300 text-xs font-bold backdrop-blur-md transition-all shadow-md active:scale-95 cursor-pointer"
+            title="Chuyển đổi góc nhìn thứ nhất / thứ ba (Phím tắt: V)"
+          >
+            <Eye className="w-3.5 h-3.5 text-amber-400" />
+            <span>{cameraMode === 'THIRD_PERSON' ? 'Góc nhìn: 3rd [V]' : 'Góc nhìn: 1st [V]'}</span>
+          </button>
+
+          {/* Nút Nghe Sử Ký Toàn Thư */}
+          <button
+            onClick={() => onOpenNarration()}
+            className="hidden sm:flex items-center gap-1 px-3 py-1.5 rounded-full bg-crimson hover:bg-crimson-light border border-amber-300 text-white text-xs font-bold backdrop-blur-md transition-all shadow-md active:scale-95 cursor-pointer"
+            title="Nghe lời dẫn Đại Việt Sử Ký Toàn Thư"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-amber-200" />
+            <span>Sử Ký Toàn Thư</span>
+          </button>
+
           <button
             onClick={onOpenCodex}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white text-xs font-semibold backdrop-blur-md transition-all shadow-md"
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white text-xs font-semibold backdrop-blur-md transition-all shadow-md cursor-pointer"
           >
             <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-            <span className="hidden sm:inline">Sổ tay Sử Việt</span>
+            <span className="hidden md:inline">Sổ tay</span>
           </button>
+
           <button
             onClick={onToggleSound}
-            className="p-1.5 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white backdrop-blur-md transition-all shadow-md"
+            className="p-1.5 rounded-full bg-black/60 hover:bg-black/80 border border-white/20 text-white backdrop-blur-md transition-all shadow-md cursor-pointer"
             title="Bật/tắt âm thanh"
           >
             {soundEnabled ? (
@@ -131,52 +161,102 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
         </div>
       </div>
 
-      {/* --- RELIC SHARDS HUD TRACKER (Mảnh Ghép Đã Thu Thập) --- */}
-      <div className="self-center sm:self-start mt-2 pointer-events-auto">
-        <div className="px-3 py-2 rounded-xl bg-black/75 border border-amber-500/40 backdrop-blur-md text-white text-xs shadow-xl flex flex-col gap-1.5 max-w-sm">
-          <div className="flex items-center justify-between gap-3 text-[11px] font-semibold text-amber-300 border-b border-white/10 pb-1">
-            <span>MẢNH GHÉP NỎ THẦN ({collectedShards.length}/3)</span>
-            {isCrossbowReady && (
-              <span className="text-emerald-400 font-bold animate-pulse">SẴN SÀNG LẮP RÁP!</span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {allRelicKeys.map((key) => {
-              const has = collectedShards.includes(key);
-              const relic = CO_LOA_RELICS[key];
-              return (
-                <div
+      {/* --- RELIC SHARDS HUD TRACKER (Mảnh Ghép Đã Thu Thập - Thiết Kế Gọn Gàng, Thu Phóng Linh Hoạt) --- */}
+      <div className="self-center sm:self-start mt-1 pointer-events-auto">
+        {/* Nút thu gọn / mở rộng bảng nhiệm vụ */}
+        {isQuestCollapsed ? (
+          <button
+            onClick={() => setIsQuestCollapsed(false)}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-black/80 hover:bg-black/95 border border-amber-400/80 text-white text-xs font-semibold backdrop-blur-md transition-all shadow-xl active:scale-95 cursor-pointer group"
+            title="Bấm để mở chi tiết nhiệm vụ nỏ thần"
+          >
+            <span className="flex items-center gap-1.5 text-amber-300 font-bold">
+              <span>🏹</span>
+              <span>Nỏ Thần:</span>
+              <span className="text-white">{collectedShards.length}/3</span>
+            </span>
+            <div className="flex items-center gap-1">
+              {allRelicKeys.map((key) => (
+                <span
                   key={key}
-                  className={`flex-1 px-2 py-1 rounded text-center transition-all ${
-                    has
-                      ? 'bg-amber-600/80 border border-amber-300 text-white font-bold shadow-sm'
-                      : 'bg-white/10 border border-white/10 text-white/50'
+                  className={`w-2 h-2 rounded-full transition-all ${
+                    collectedShards.includes(key)
+                      ? 'bg-amber-400 shadow-sm shadow-amber-300'
+                      : 'bg-white/20'
                   }`}
-                >
-                  <div className="text-[10px] truncate">{relic.name.split(' ')[0]}</div>
-                  <div className="text-[11px]">{has ? '✓' : '...'}</div>
-                </div>
-              );
-            })}
-          </div>
-
-          {/* Hướng dẫn mục tiêu hiện tại */}
-          <div className="text-[11px] text-amber-100/90 font-serif italic pt-0.5">
-            {!isCrossbowReady && (
-              <span>🔍 Hãy đi quanh thành Cổ Loa, tìm 3 cổ vật phát quang và bấm [E] để nhặt.</span>
-            )}
+                />
+              ))}
+            </div>
             {isCrossbowReady && !isCrossbowAssembled && (
-              <span className="text-emerald-300 font-bold">
-                🏹 Đã đủ 3 mảnh ghép! Hãy lên Vọng Lâu bờ thành phía Nam để lắp ráp Nỏ Thần.
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/80 text-white font-bold animate-pulse">
+                Lắp Ráp!
               </span>
             )}
             {isCrossbowAssembled && (
-              <span className="text-amber-300 font-bold">
-                🎯 Bấm [E] hoặc Chạm BẮN để phóng chùm tên đồng diệt 3 bia tiêu giặc ({targetsHit}/3)!
+              <span className="text-[10px] px-1.5 py-0.5 rounded bg-red-600 text-white font-bold animate-pulse">
+                Bắn: {targetsHit}/5
               </span>
             )}
+            <span className="text-[10px] text-amber-400 group-hover:translate-y-0.5 transition-transform">
+              ▾
+            </span>
+          </button>
+        ) : (
+          <div className="px-3 py-2 rounded-2xl bg-black/80 border border-amber-500/50 backdrop-blur-md text-white text-xs shadow-2xl flex flex-col gap-1.5 max-w-xs transition-all animate-fade-in">
+            <div className="flex items-center justify-between gap-2 text-[11px] font-bold text-amber-300 border-b border-white/10 pb-1">
+              <span className="flex items-center gap-1">
+                <span>🏹</span>
+                <span>MẢNH GHÉP NỎ ({collectedShards.length}/3)</span>
+              </span>
+              <button
+                onClick={() => setIsQuestCollapsed(true)}
+                className="text-[10px] text-white/60 hover:text-amber-300 px-1.5 py-0.5 rounded hover:bg-white/10 transition-colors flex items-center gap-0.5 cursor-pointer"
+                title="Thu gọn bảng nhiệm vụ để thoáng màn hình"
+              >
+                <span>Thu gọn</span>
+                <span>▴</span>
+              </button>
+            </div>
+
+            {/* Danh sách 3 mảnh ghép */}
+            <div className="grid grid-cols-3 gap-1.5">
+              {allRelicKeys.map((key) => {
+                const has = collectedShards.includes(key);
+                const relic = CO_LOA_RELICS[key];
+                return (
+                  <div
+                    key={key}
+                    className={`px-1.5 py-1 rounded-lg text-center transition-all ${
+                      has
+                        ? 'bg-gradient-to-b from-amber-600/90 to-amber-700/90 border border-amber-300 text-white font-bold shadow-sm'
+                        : 'bg-white/10 border border-white/10 text-white/50'
+                    }`}
+                  >
+                    <div className="text-[9px] truncate font-medium">{relic.name.split(' ')[0]}</div>
+                    <div className="text-[11px] font-bold leading-tight">{has ? '✓' : '○'}</div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Chỉ dẫn súc tích */}
+            <div className="text-[10px] text-amber-100/90 italic font-serif leading-tight">
+              {!isCrossbowReady && (
+                <span>🔍 Tìm 3 cổ vật phát quang và nhấn [E].</span>
+              )}
+              {isCrossbowReady && !isCrossbowAssembled && (
+                <span className="text-emerald-300 font-bold not-italic">
+                  🏹 Đã đủ 3 mảnh! Lên Vọng Lâu bờ thành Nam lắp nỏ.
+                </span>
+              )}
+              {isCrossbowAssembled && (
+                <span className="text-amber-300 font-bold not-italic">
+                  🎯 Bấm [E] hoặc Chạm BẮN diệt thuyền ({targetsHit}/5)!
+                </span>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
       {/* --- CENTER CROSSHAIR & INTERACTION PROMPT --- */}
@@ -220,15 +300,19 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
         {/* Desktop Helper Guide */}
         <div className="hidden sm:flex items-center gap-3 px-4 py-2 rounded-xl bg-black/60 border border-white/10 text-[11px] text-white/80 font-mono backdrop-blur-md shadow-md">
           <span>
-            <strong className="text-amber-300">W, A, S, D</strong> Di chuyển
+            <strong className="text-amber-300">W, A, S, D / Phím Mũi Tên</strong> Di chuyển
           </span>
           <span>•</span>
           <span>
-            <strong className="text-amber-300">Chuột</strong> Xoay nhìn 360° (Click để khóa chuột)
+            <strong className="text-amber-300">[V]</strong> Đổi góc nhìn 1st/3rd
           </span>
           <span>•</span>
           <span>
-            <strong className="text-amber-300">[E]</strong> Tương tác / Khảo sát cổ vật
+            <strong className="text-amber-300">Kéo Chuột / Pointer</strong> Xoay 360°
+          </span>
+          <span>•</span>
+          <span>
+            <strong className="text-amber-300">[E]</strong> Tương tác
           </span>
         </div>
 
@@ -238,7 +322,7 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
           {isCrossbowAssembled && (
             <div className="px-3 py-1 rounded-full bg-crimson border border-amber-300 text-white text-xs font-bold flex items-center gap-1.5 shadow-lg animate-pulse">
               <Target className="w-3.5 h-3.5 text-amber-300" />
-              <span>Tiêu diệt: {targetsHit}/3 bia tiêu</span>
+              <span>Tiêu diệt: {targetsHit}/5 chiến thuyền</span>
             </div>
           )}
 

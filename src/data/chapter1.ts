@@ -183,6 +183,54 @@ export const HISTORICAL_FACTS_CH1: HistoricalFact[] = [
     keyTakeaway:
       'Trải nghiệm giải mã giúp bạn nhớ lâu qua hành động, trong khi Sổ tay giữ sự chuẩn xác tuyệt đối về nguồn sử liệu.',
   },
+  {
+    id: 'fact-co-loa-thanh-oc',
+    title: 'Cổ Loa Thành: Kiến trúc phòng thủ xoắn ốc độc nhất vô nhị',
+    summary:
+      'An Dương Vương đắp thành Cổ Loa rộng ngàn trượng, 9 vòng xoáy ốc kiên cố với hào sâu liên hoàn.',
+    detailedContent:
+      'Đại Việt Sử Ký Toàn Thư ghi chép: Vua An Dương Vương dời đô về Phong Khê, sai đắp thành rộng ngàn trượng, hình xoắn ốc nên gọi là Loa Thành. Thành có 3 vòng thành đất chính (Nội, Trung, Ngoại) khép kín, chân thành kè đá, bao quanh bởi hệ thống hào nước sâu thông với sông Hoàng Giang. Đây là công trình thành lũy quân sự cổ đại kỳ vĩ nhất Đông Nam Á thời kỳ trước Công nguyên.',
+    classification: 'HISTORICAL_FACT',
+    verificationStatus: 'VERIFIED',
+    sourceIds: ['src-dvsktt-thuc-vuong'],
+    sourceNotes:
+      'Đại Việt Sử Ký Toàn Thư, Ngoại kỷ Quyển I, Kỷ Thục Vương An Dương Vương.',
+    era: 'Thế kỷ III trước Công nguyên (Thời Âu Lạc)',
+    keyTakeaway:
+      'Thành Cổ Loa là đỉnh cao quân sự kết hợp khéo léo địa hình sông nước và lũy hào xoắn ốc để phòng thủ toàn diện.',
+  },
+  {
+    id: 'fact-no-than-lien-chau',
+    title: 'Nỏ Thần Kim Quy: Vũ khí cơ học Liên Châu của tướng quân Cao Lỗ',
+    summary:
+      'Tướng quân Cao Lỗ sáng chế Nỏ Liên Châu, một lần bóp cò phóng ra nhiều mũi tên đồng xuyên phá giáp giặc.',
+    detailedContent:
+      'Sách Sử Ký Toàn Thư ghi: Thần Kim Quy tháo vuốt trao cho vua bảo chế làm lẫy nỏ. Vua sai tướng quân Cao Lỗ làm nỏ thần, gọi là Linh Quang Kim Quy Thần Nỏ. Khảo cổ học tại Cổ Loa đã giải mã "vuốt rùa" chính là bộ lẫy nỏ bằng đồng gồm hộp lẫy, chốt giữ dây cung, cò súng và hai lá hãm. Cơ chế đòn bẩy trợ lực giúp người lính kéo căng dây cung chịu lực lớn và phóng chùm mũi tên 3 cạnh đi xa hàng trăm mét với sức công phá hủy diệt.',
+    classification: 'HISTORICAL_FACT',
+    verificationStatus: 'VERIFIED',
+    sourceIds: ['src-dvsktt-thuc-vuong', 'src-archaeology-co-loa'],
+    sourceNotes:
+      'Đại Việt Sử Ký Toàn Thư và hiện vật khảo cổ lẫy nỏ đồng trưng bày tại Bảo tàng Lịch sử Quốc gia.',
+    era: 'Thời đại đồ đồng Đông Sơn — Âu Lạc',
+    keyTakeaway:
+      'Nỏ thần là sự kết hợp giữa truyền thuyết rùa vàng và đỉnh cao kỹ thuật cơ khí quân sự Việt cổ của danh tướng Cao Lỗ.',
+  },
+  {
+    id: 'fact-dong-son-metallurgy-arrows',
+    title: 'Kho Mũi Tên Đồng Cầu Vực & Hợp Kim Luyện Kim Đông Sơn',
+    summary:
+      'Khai quật hàng vạn mũi tên đồng 3 cạnh Cầu Vực chứng minh năng lực luyện kim và sản xuất vũ khí quy mô lớn.',
+    detailedContent:
+      'Năm 1959, tại di chỉ Cầu Vực (Cổ Loa), các nhà khảo cổ phát hiện một hố chôn chứa gần 1 vạn mũi tên đồng 3 cạnh. Các mũi tên có cánh xẻ rãnh khí động học cân đối hoàn hảo. Phân tích luyện kim cho thấy hợp kim đúc đạt tỷ lệ chuẩn Đông Sơn: ~75% Đồng (độ cứng), ~20% Thiếc (hạ nhiệt độ nóng chảy, tạo độ bóng sắc bén), ~5% Chì (tăng độ chảy loãng điền đầy khuôn). Đây là bằng chứng vật chất đanh thép về nỏ thần thời An Dương Vương.',
+    classification: 'HISTORICAL_FACT',
+    verificationStatus: 'VERIFIED',
+    sourceIds: ['src-archaeology-co-loa'],
+    sourceNotes:
+      'Báo cáo khai quật Cầu Vực (1959) và công trình nghiên cứu Văn hóa Đông Sơn.',
+    era: 'Văn hóa Đông Sơn (Thế kỷ III TCN)',
+    keyTakeaway:
+      'Kho mũi tên đồng Cầu Vực là bảo vật quốc gia chứng minh sức mạnh công nghệ quân sự có thật của nhà nước Âu Lạc.',
+  },
 ];
 
 export const INVENTORY_ITEMS: Record<string, InventoryItem> = {

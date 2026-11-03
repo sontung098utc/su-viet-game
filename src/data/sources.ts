@@ -26,5 +26,21 @@ export const HISTORICAL_SOURCES: HistoricalSource[] = [
     details: 'Các báo cáo khai quật bãi cọc Yên Giang (1953, 1984, 1988), Đồng Vạn Muối (2005) tại Quảng Ninh và Cao Quỳ (2019) tại Hải Phòng.',
     supportedClaims: 'Lưu ý phân định niên đại: Các bãi cọc khảo cổ đã khai quật tại Yên Giang, Đồng Vạn Muối và Cao Quỳ chủ yếu được giới nghiên cứu xác định thuộc chiến thắng Bạch Đằng năm 1288 (thời Trần) hoặc đang tiếp tục nghiên cứu thêm. Đối với trận Bạch Đằng năm 938 của Ngô Quyền, căn cứ xác thực hiện nay là ghi chép trong chính sử ("cọc lớn vạt nhọn đầu, bịt sắt đóng ngầm ở trước cửa biển"), còn vị trí bãi cọc 938 trên thực địa và chủng loại gỗ cụ thể năm 938 chưa có kết luận khảo cổ học dứt khoát.',
     isPrimary: false,
+  },
+  {
+    id: 'src-dvsktt-thuc-vuong',
+    name: 'Đại Việt Sử Ký Toàn Thư (Ngoại kỷ, Quyển I — Kỷ Thục Vương)',
+    authorOrInstitution: 'Ngô Sĩ Liên và các sử thần triều Hậu Lê; Bản dịch Viện Khoa học Xã hội Việt Nam, NXB Khoa học Xã hội, Hà Nội, 1993.',
+    details: 'Ngoại kỷ, Quyển I, Kỷ Thục Vương (An Dương Vương, húy Phán, người Ba Thục).',
+    supportedClaims: 'Xác nhận: (1) An Dương Vương đắp thành ở Việt Thường rộng ngàn trượng, xoắn ốc như con ốc nên gọi là Loa Thành; (2) Có rùa vàng (Kim Quy) từ phương đông nổi lên mặt nước xưng là Giang Sứ giúp trừ quỷ tinh Bạch Kê tinh ở núi Thất Diệu để thành đắp xong; (3) Rùa vàng trước khi từ biệt đã tháo vuốt trao cho vua làm lẫy nỏ; (4) Vua sai bầy tôi là Cao Lỗ chế tạo nỏ thần gọi là Linh Quang Kim Quy Thần Nỏ (bắn một phát ra nhiều mũi tên); (5) Khi Triệu Đà cử Trọng Thủy cầu hôn Mỵ Châu, đánh tráo lẫy nỏ khiến cơ đồ đắm chìm.',
+    isPrimary: true,
+  },
+  {
+    id: 'src-archaeology-co-loa',
+    name: 'Khảo Cổ Học Văn Hóa Đông Sơn & Di Tích Thành Cổ Loa (Hà Nội)',
+    authorOrInstitution: 'Viện Khảo cổ học Việt Nam, Bảo tàng Hà Nội',
+    details: 'Khai quật di chỉ Cầu Vực (1959), Mương Bè và lò đúc mũi tên đồng Cổ Loa.',
+    supportedClaims: 'Xác minh hiện vật thực tế: (1) Phát hiện kho hàng vạn mũi tên đồng 3 cạnh Cổ Loa tại Cầu Vực có cấu tạo khí động học tinh xảo; (2) Tỷ lệ hợp kim Đông Sơn đạt độ bền cơ học cao nhất (khoảng 75% Đồng, 20% Thiếc, 5% Chì); (3) Khai quật khuôn đúc mũi tên ba cạnh bằng đá sa thạch và cụm lẫy nỏ bằng đồng có khóa hãm, thanh cò và thước ngắm, khẳng định kỹ nghệ vũ khí thời Âu Lạc vượt trội thời đại.',
+    isPrimary: false,
   }
 ];
