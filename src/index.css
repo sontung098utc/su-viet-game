@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background-color: #F7F2E7;
+    color: #2F1B12;
+    font-family: 'Be Vietnam Pro', system-ui, sans-serif;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  h1, h2, h3, h4, .font-title {
+    font-family: 'Playfair Display', Georgia, serif;
+  }
+}
+
+/* Custom Paper Texture & Ancient Vibe */
+.bg-parchment-pattern {
+  background-color: #FAF4E6;
+  background-image: 
+    radial-gradient(#DEC59C 0.75px, transparent 0.75px),
+    radial-gradient(#DEC59C 0.75px, #FAF4E6 0.75px);
+  background-size: 30px 30px;
+  background-position: 0 0, 15px 15px;
+}
+
+.wood-frame {
+  border: 4px solid #5C3A21;
+  box-shadow: inset 0 0 10px rgba(47, 27, 18, 0.4), 0 6px 16px rgba(0,0,0,0.25);
+  background: #FAF7F0;
+  border-radius: 8px;
+}
+
+.seal-stamp {
+  border: 2px dashed #9B1D20;
+  color: #9B1D20;
+  border-radius: 4px;
+  display: inline-block;
+  padding: 2px 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #EBDDC1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #B88B4B;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #946B34;
+}
+
+/* Wave & Ripple Animations */
+@keyframes waveFlow {
+  0% { transform: translateX(0); }
+  50% { transform: translateX(-25%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-wave {
+  animation: waveFlow 12s ease-in-out infinite;
+}
+
+@keyframes pulseGlow {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.05); }
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2.5s infinite;
+}
