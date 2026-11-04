@@ -232,5 +232,143 @@ export interface UserProgress {
   discoveredFacts: string[];
   chapter1Completed: boolean;
   completedRecapOrder: boolean;
+  startedAt?: string;
+  completedAt?: string;
+  totalPlayTimeSeconds?: number;
+  scholarPoints?: number;
+  dailyMissions?: DailyMissionsState;
+  historicalMissions?: HistoricalMissionsProgress;
   lastSavedAt: string;
 }
+
+export type HistoricalMissionId =
+  | 'MISSION_TACTICAL_SANDTABLE'
+  | 'MISSION_CO_LOA_BALLISTICS'
+  | 'MISSION_WAR_COUNCIL_DEBATE'
+  | 'MISSION_LOGISTICS_AND_PEOPLE';
+
+export type HistoricalMissionCategory =
+  | 'TACTICAL_SANDTABLE'
+  | 'ARCHAEOLOGY_RESTORE'
+  | 'WAR_COUNCIL'
+  | 'LOGISTICS_CIVILIAN';
+
+export interface HistoricalMissionsProgress {
+  completedMissionIds: HistoricalMissionId[];
+  sandtableDecisions?: {
+    tideTiming?: 'MORNING_EBB' | 'NOON_FLOOD_AFTERNOON_EBB' | 'NIGHT_FLOOD';
+    woodMaterial?: 'BAMBOO' | 'IRONWOOD_LIM' | 'SOFT_PINE';
+    stakeAngle?: 'VERTICAL_90' | 'SLANTED_45_EBB' | 'OPPOSITE_45';
+    fleetTactic?: 'FRONTAL_CHARGE' | 'FEIGNED_RETREAT_BAIT' | 'SHORE_DEFENSE';
+    score?: number;
+  };
+  archaeologyDecisions?: {
+    assembledParts: string[];
+    testedAerodynamics: boolean;
+    discoveredExcavation: boolean;
+    score?: number;
+  };
+  warCouncilDecisions?: {
+    q1Verdict?: string;
+    q2Verdict?: string;
+    q3Verdict?: string;
+    score?: number;
+  };
+  logisticsDecisions?: {
+    woodLogged: boolean;
+    ironForged: boolean;
+    pitchSealed: boolean;
+    score?: number;
+  };
+}
+
+export type ScholarRankId =
+  | 'SI_TU'
+  | 'TU_TAI'
+  | 'CU_NHAN'
+  | 'TIEN_SI'
+  | 'BANG_NHAN'
+  | 'TRANG_NGUYEN';
+
+export interface ScholarRank {
+  id: ScholarRankId;
+  title: string;
+  minPoints: number;
+  nextPoints: number | null;
+  badge: string;
+  hatIcon: string;
+  description: string;
+  historicalNote: string;
+}
+
+export type DailyMissionType = 'TRIVIA' | 'EXPLORATION';
+
+export type DailyExplorationTarget =
+  | 'READ_CODEX'
+  | 'EXPLORE_CO_LOA'
+  | 'SOLVE_CIPHER'
+  | 'PLAY_AMBIENT_MUSIC'
+  | 'INSPECT_RELIC'
+  | 'SMELTING_TRIAL';
+
+export interface DailyMission {
+  id: string;
+  type: DailyMissionType;
+  title: string;
+  description: string;
+  points: number;
+  category: string;
+  completed: boolean;
+  question?: string;
+  options?: string[];
+  correctIndex?: number;
+  explanation?: string;
+  userAnswerIndex?: number;
+  explorationTarget?: DailyExplorationTarget;
+  actionLabel?: string;
+  hint?: string;
+}
+
+export interface DailyMissionsState {
+  dateString: string;
+  streakDays: number;
+  missions: DailyMission[];
+  dailyBonusClaimed: boolean;
+  lastCompletedDate?: string;
+}
+
+export type AchievementId =
+  | 'ACH_SPEED_GOLD'
+  | 'ACH_SPEED_SILVER'
+  | 'ACH_CIPHER_MASTER'
+  | 'ACH_CIPHER_SCHOLAR'
+  | 'ACH_SECRET_CIPHER'
+  | 'ACH_PERFECT_INVESTIGATION'
+  | 'ACH_ALL_CLUES'
+  | 'ACH_HISTORICAL_CODEX'
+  | 'ACH_CHRONICLER_RECAP';
+
+export type AchievementTier = 'gold' | 'silver' | 'bronze' | 'jade';
+export type AchievementCategory = 'all' | 'speed' | 'puzzle' | 'secret' | 'mastery';
+
+export interface AchievementDefinition {
+  id: AchievementId;
+  title: string;
+  subtitle: string;
+  sealName: string;
+  category: 'speed' | 'puzzle' | 'secret' | 'mastery';
+  tier: AchievementTier;
+  description: string;
+  loreContext: string;
+  targetCriteria: string;
+  iconType: 'speed' | 'cipher' | 'secret' | 'accuracy' | 'codex' | 'recap' | 'clues';
+}
+
+export interface UserAchievement extends AchievementDefinition {
+  isUnlocked: boolean;
+  progressCurrent: number;
+  progressMax: number;
+  progressLabel: string;
+  unlockedAt?: string;
+}
+

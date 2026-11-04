@@ -43,6 +43,7 @@ import {
   CheckCircle2,
   Lock,
   KeyRound,
+  Scroll,
 } from 'lucide-react';
 
 export const AdventureGameScreen: React.FC = () => {
@@ -65,6 +66,8 @@ export const AdventureGameScreen: React.FC = () => {
     clearFactToast,
     openCipherPuzzle,
     activeCipherPuzzle,
+    openDailyMissions,
+    openHistoricalMissions,
   } = useGame();
 
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -713,6 +716,39 @@ export const AdventureGameScreen: React.FC = () => {
           </span>
         </button>
 
+        <button
+          onClick={() => {
+            voiceManager.stop();
+            openDailyMissions();
+          }}
+          className="min-h-[42px] px-2.5 py-2 rounded-xl bg-amber-950/85 hover:bg-amber-900 text-amber-100 border-2 border-amber-500/70 text-xs font-bold flex items-center gap-1 shadow-lg transition-all active:scale-95 relative"
+          title="Mở Nhiệm Vụ Sử Học Hằng Ngày"
+        >
+          <Scroll className="w-4 h-4 text-amber-300 shrink-0" />
+          <span className="hidden sm:inline">Nhiệm vụ</span>
+          <span className="px-1.5 py-0.2 rounded-full bg-amber-700 text-white text-[10px]">
+            {progress.scholarPoints || 0}đ
+          </span>
+          {(progress.dailyMissions?.missions?.filter((m) => !m.completed).length ?? 3) > 0 && (
+            <span className="w-2 h-2 rounded-full bg-crimson absolute -top-0.5 -right-0.5 ring-2 ring-amber-950 animate-pulse" />
+          )}
+        </button>
+
+        <button
+          onClick={() => {
+            voiceManager.stop();
+            openHistoricalMissions('MISSION_TACTICAL_SANDTABLE');
+          }}
+          className="min-h-[42px] px-2.5 py-2 rounded-xl bg-red-950/85 hover:bg-red-900 text-red-100 border-2 border-red-500/70 text-xs font-bold flex items-center gap-1 shadow-lg transition-all active:scale-95"
+          title="Mở Sa Bàn Bày Trận Cọc Ngầm Sông Bạch Đằng & Nhiệm Vụ Sử Học"
+        >
+          <Compass className="w-4 h-4 text-amber-300 shrink-0" />
+          <span className="hidden xl:inline">Sa Bàn Sử</span>
+          <span className="px-1.5 py-0.2 rounded-full bg-crimson text-white text-[10px]">
+            {progress.historicalMissions?.completedMissionIds?.length || 0}/4
+          </span>
+        </button>
+
         {/* Nút Bật/Tắt nhanh tổng âm thanh */}
         <button
           onClick={() => {
@@ -883,18 +919,23 @@ export const AdventureGameScreen: React.FC = () => {
                 </span>
               </button>
 
-              {progress.chapter1Completed && (
-                <button
-                  onClick={() => {
-                    setShowMenuPopover(false);
-                    setScreen('SUMMARY');
-                  }}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-parchment-200 font-bold text-crimson flex items-center gap-2"
-                >
-                  <Award className="w-4 h-4" />
-                  Xem Tổng kết hành trình
-                </button>
-              )}
+              <button
+                onClick={() => {
+                  setShowMenuPopover(false);
+                  setScreen('SUMMARY');
+                }}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-parchment-200 font-bold text-crimson flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <Award className="w-4 h-4 text-crimson" />
+                  <span>Bảng Thành Tựu & Dấu Ấn</span>
+                </span>
+                {progress.chapter1Completed && (
+                  <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">
+                    Đã hoàn thành
+                  </span>
+                )}
+              </button>
               <button
                 onClick={() => {
                   setShowMenuPopover(false);

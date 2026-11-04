@@ -1,7 +1,6 @@
 import type { DialogueLine } from '../types';
 import { CHARACTER_VOICE_CONFIGS } from '../data/voiceDialogue';
 import { sound } from './sound';
-import { vietnameseAmbientMusic } from './vietnameseAmbientMusic';
 
 export type VoicePlaybackMode =
   | 'idle'
@@ -75,17 +74,9 @@ class VoiceManager {
     this.audioUnlocked = true;
     try {
       sound.startAmbientBgm();
-      if (!vietnameseAmbientMusic.getState().isMuted) {
-        vietnameseAmbientMusic.play();
-      }
     } catch {
       // Ignore
     }
-  }
-
-  private setDucking(ducking: boolean) {
-    sound.setVoiceDucking(ducking);
-    vietnameseAmbientMusic.setVoiceDucking(ducking);
   }
 
   public syncSettings(settings: {
@@ -183,7 +174,7 @@ class VoiceManager {
       }
     }
 
-    this.setDucking(false);
+    sound.setVoiceDucking(false);
     this.setState({
       isPlaying: false,
       activeLineId: this.activeLine ? this.activeLine.id : null,
@@ -229,7 +220,7 @@ class VoiceManager {
         audio.volume = effectiveVolume;
         this.currentAudio = audio;
 
-        this.setDucking(true);
+        sound.setVoiceDucking(true);
         this.setState({
           isPlaying: true,
           activeLineId: line.id,
@@ -240,7 +231,7 @@ class VoiceManager {
         audio.onended = () => {
           if (this.playToken !== currentToken) return;
           this.currentAudio = null;
-          this.setDucking(false);
+          sound.setVoiceDucking(false);
           this.setState({
             isPlaying: false,
             activeLineId: line.id,
@@ -252,7 +243,7 @@ class VoiceManager {
         audio.onerror = () => {
           if (this.playToken !== currentToken) return;
           this.currentAudio = null;
-          this.setDucking(false);
+          sound.setVoiceDucking(false);
           this.setState({
             isPlaying: false,
             activeLineId: line.id,
@@ -266,7 +257,7 @@ class VoiceManager {
           playPromise.catch((err: unknown) => {
             if (this.playToken !== currentToken) return;
             this.currentAudio = null;
-            this.setDucking(false);
+            sound.setVoiceDucking(false);
 
             const errName =
               err && typeof err === 'object' && 'name' in err
@@ -321,7 +312,7 @@ class VoiceManager {
           utterance.voice = viVoice;
         }
 
-        this.setDucking(true);
+        sound.setVoiceDucking(true);
         this.setState({
           isPlaying: true,
           activeLineId: line.id,
@@ -331,7 +322,7 @@ class VoiceManager {
 
         utterance.onend = () => {
           if (this.playToken !== token) return;
-          this.setDucking(false);
+          sound.setVoiceDucking(false);
           this.setState({
             isPlaying: false,
             activeLineId: line.id,
@@ -342,7 +333,7 @@ class VoiceManager {
 
         utterance.onerror = () => {
           if (this.playToken !== token) return;
-          this.setDucking(false);
+          sound.setVoiceDucking(false);
           this.setState({
             isPlaying: false,
             activeLineId: line.id,
@@ -358,7 +349,7 @@ class VoiceManager {
       }
     }
 
-    this.setDucking(false);
+    sound.setVoiceDucking(false);
     this.setState({
       isPlaying: false,
       activeLineId: line.id,

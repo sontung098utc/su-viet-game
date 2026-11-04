@@ -429,6 +429,31 @@ class SoundController {
     }
   }
 
+  public playError() {
+    const level = this.getEffectiveSfxGain(0.18);
+    if (level <= 0.001) return;
+    try {
+      this.initContext();
+      if (!this.ctx) return;
+      const now = this.ctx.currentTime;
+      [220, 185].forEach((freq, idx) => {
+        if (!this.ctx) return;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(freq, now + idx * 0.12);
+        gain.gain.setValueAtTime(level * 0.8, now + idx * 0.12);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + idx * 0.12 + 0.2);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now + idx * 0.12);
+        osc.stop(now + idx * 0.12 + 0.2);
+      });
+    } catch {
+      // Ignore
+    }
+  }
+
   // Âm thanh 3D Góc Nhìn Thứ Nhất: Nhặt Cổ Vật Phát Quang
   public playRelicFound() {
     const level = this.getEffectiveSfxGain(0.22);
@@ -576,30 +601,6 @@ class SoundController {
         osc.start(now + delay);
         osc.stop(now + delay + 0.5);
       });
-    } catch {
-      // Ignore
-    }
-  }
-
-  // Âm thanh báo sai khi giải mật mã hoặc chọn nhầm
-  public playError() {
-    const level = this.getEffectiveSfxGain(0.2);
-    if (level <= 0.001) return;
-    try {
-      this.initContext();
-      if (!this.ctx) return;
-      const now = this.ctx.currentTime;
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = 'sawtooth';
-      osc.frequency.setValueAtTime(140, now);
-      osc.frequency.exponentialRampToValueAtTime(70, now + 0.22);
-      gain.gain.setValueAtTime(level, now);
-      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
-      osc.connect(gain);
-      gain.connect(this.ctx.destination);
-      osc.start(now);
-      osc.stop(now + 0.22);
     } catch {
       // Ignore
     }

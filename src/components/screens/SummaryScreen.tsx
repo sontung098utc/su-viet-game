@@ -1,6 +1,15 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useGame } from '../../context/GameContext';
 import { JOURNEY_RECAP_CARDS, type JourneyRecapCard } from '../../data/chapter1';
+import {
+  evaluateAchievements,
+  getSpeedRating,
+  formatDuration,
+} from '../../data/achievements';
+import { AchievementSeal } from '../common/AchievementSeal';
+import { AchievementDetailModal } from '../common/AchievementDetailModal';
+import { sound } from '../../utils/sound';
+import type { UserAchievement, AchievementCategory } from '../../types';
 import confetti from 'canvas-confetti';
 import {
   Award,
@@ -10,11 +19,24 @@ import {
   CheckCircle2,
   MapPin,
   MoveUp,
-  MoveDown
+  MoveDown,
+  Timer,
+  KeyRound,
+  Scroll,
+  Compass,
 } from 'lucide-react';
+import { getScholarRank } from '../../data/dailyMissions';
 
 export const SummaryScreen: React.FC = () => {
-  const { progress, setScreen, openCodex, completeRecap, restartAdventure } = useGame();
+  const {
+    progress,
+    setScreen,
+    openCodex,
+    completeRecap,
+    restartAdventure,
+    openDailyMissions,
+    openHistoricalMissions,
+  } = useGame();
 
   // Xáo trộn nhẹ 3 thẻ hình ảnh ban đầu để người chơi sắp xếp kể lại hành trình
   const [cards, setCards] = useState<JourneyRecapCard[]>(() => [
@@ -25,6 +47,41 @@ export const SummaryScreen: React.FC = () => {
   const [selectedIdx, setSelectedIdx] = useState<number | null>(null);
   const [recapVerified, setRecapVerified] = useState(progress.completedRecapOrder);
   const [feedback, setFeedback] = useState<string | null>(null);
+
+  // Tab lọc danh mục thành tựu
+  const [activeCategory, setActiveCategory] = useState<AchievementCategory>('all');
+  const [selectedAchievement, setSelectedAchievement] = useState<UserAchievement | null>(null);
+
+  // Tính thời gian chơi thực tế (khởi tạo an toàn 1 lần khi mở màn hình tổng kết)
+  const [effectivePlayTimeSeconds] = useState<number>(() => {
+    if (progress.totalPlayTimeSeconds && progress.totalPlayTimeSeconds > 0) {
+      return progress.totalPlayTimeSeconds;
+    }
+    if (progress.startedAt) {
+      const startMs = new Date(progress.startedAt).getTime();
+      const elapsed = Math.round((Date.now() - startMs) / 1000);
+      if (elapsed > 0 && elapsed < 86400) return elapsed;
+    }
+    return 260; // Dự phòng mặc định thời gian hợp lý
+  });
+
+  const speedRating = useMemo(() => getSpeedRating(effectivePlayTimeSeconds), [effectivePlayTimeSeconds]);
+
+  // Đánh giá danh sách thành tựu
+  const achievements = useMemo(
+    () => evaluateAchievements(progress, effectivePlayTimeSeconds),
+    [progress, effectivePlayTimeSeconds]
+  );
+
+  const unlockedCount = useMemo(
+    () => achievements.filter((a) => a.isUnlocked).length,
+    [achievements]
+  );
+
+  const filteredAchievements = useMemo(() => {
+    if (activeCategory === 'all') return achievements;
+    return achievements.filter((a) => a.category === activeCategory);
+  }, [achievements, activeCategory]);
 
   useEffect(() => {
     try {
@@ -66,11 +123,21 @@ export const SummaryScreen: React.FC = () => {
       setRecapVerified(true);
       setFeedback('Chính xác! Bạn đã kể lại trọn vẹn mạch hành trình và ba bài học lịch sử năm 938.');
       completeRecap();
+      try {
+        confetti({ particleCount: 60, spread: 70, origin: { y: 0.7 } });
+      } catch {
+        // Ignore
+      }
     } else {
       setFeedback(
         'Thứ tự chưa khớp với hành trình bạn vừa đi qua: Hãy bắt đầu từ câu chuyện ở Làng Ven Sông -> Rèn đai sắt ở Khu Chuẩn Bị -> Quan sát con nước thủy triều ở Bến Sông!'
       );
     }
+  };
+
+  const handleInspectAchievement = (ach: UserAchievement) => {
+    sound.playClueFound();
+    setSelectedAchievement(ach);
   };
 
   const renderSceneIllustration = (type: JourneyRecapCard['sceneType']) => {
@@ -118,11 +185,18 @@ export const SummaryScreen: React.FC = () => {
     );
   };
 
+  const coreCiphers = ['CIPHER_VILLAGE_SCROLL', 'CIPHER_CAMP_CHEST', 'CIPHER_TIDE_STELE'];
+  const solvedCoreCount = coreCiphers.filter((id) => (progress.solvedCiphers || []).includes(id as any)).length;
+  const secretCiphers = ['CIPHER_SECRET_WELL', 'CIPHER_SECRET_SHRINE', 'CIPHER_SECRET_PITCH'];
+  const solvedSecretCount = secretCiphers.filter((id) => (progress.solvedCiphers || []).includes(id as any)).length;
+  const scholarRank = getScholarRank(progress.scholarPoints || 0);
+
   return (
-    <div className="min-h-screen bg-parchment-pattern flex flex-col justify-between p-4 sm:p-8 select-none">
+    <div className="min-h-screen bg-parchment-pattern flex flex-col justify-between p-3 sm:p-8 select-none">
       <main className="max-w-4xl mx-auto w-full space-y-6 my-auto">
         {/* Khung hoàn thành câu chuyện */}
-        <div className="bg-parchment-50 rounded-3xl border-4 border-bronze shadow-2xl p-6 sm:p-8 text-lacquer">
+        <div className="bg-parchment-50 rounded-3xl border-4 border-bronze shadow-2xl p-5 sm:p-8 text-lacquer">
+          {/* Header chúc mừng */}
           <div className="text-center mb-6">
             <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-crimson text-white text-xs font-bold shadow mb-2">
               <Sparkles className="w-3.5 h-3.5 text-bronze-light" />
@@ -132,19 +206,146 @@ export const SummaryScreen: React.FC = () => {
               Bến Sông Bạch Đằng Mùa Đông Năm 938
             </h1>
             <p className="text-xs sm:text-sm text-lacquer/80 max-w-2xl mx-auto mt-1.5 leading-relaxed">
-              Chúc mừng người đưa tin <strong>{progress.playerName}</strong>! Qua những bước chân giữa{' '}
+              Chúc mừng người đưa tin <strong>{progress.playerName}</strong> (Học vị Quốc Tử Giám:{' '}
+              <strong className="text-amber-800">{scholarRank.title}</strong> · {progress.scholarPoints || 0} Điểm Học Giả)! Qua những bước chân giữa{' '}
               <strong>Làng Ven Sông</strong>, <strong>Khu Chuẩn Bị</strong> và <strong>Bến Quan Sát</strong>, bạn đã trực tiếp trải nghiệm không khí chuẩn bị và thời khắc quyết định của chiến thắng Bạch Đằng.
             </p>
-            {/* Thành tích giải mật mã */}
-            <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-amber-100 border border-amber-400 text-amber-900 text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-amber-700" />
-                Mật mã cơ mật đã giải: <strong>{progress.solvedCiphers?.length || 0}/3</strong>
-              </span>
-              <span className="px-3 py-1 rounded-full bg-emerald-100 border border-emerald-400 text-emerald-900 text-xs font-bold flex items-center gap-1.5 shadow-sm">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
-                Manh mối & Mật thư đã tìm: <strong>{progress.collectedClues.length} manh mối</strong>
-              </span>
+          </div>
+
+          {/* Dải Thống Kê Nhanh (Stats Strip) */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {/* Tốc độ hoàn thành */}
+            <div className="p-3.5 rounded-2xl bg-parchment-100 border border-parchment-300 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-lacquer/75 mb-1">
+                <span className="flex items-center gap-1 font-semibold">
+                  <Timer className="w-3.5 h-3.5 text-crimson" />
+                  Tốc Độ
+                </span>
+                <span className="font-bold text-[11px] px-1.5 py-0.2 rounded border bg-amber-50 border-amber-300 text-amber-800">
+                  Hạng {speedRating.rank}
+                </span>
+              </div>
+              <div className="font-title font-bold text-xl sm:text-2xl text-lacquer tabular-nums">
+                {formatDuration(effectivePlayTimeSeconds)}
+              </div>
+              <p className="text-[11px] text-lacquer/70 truncate mt-0.5">
+                {speedRating.title}
+              </p>
+            </div>
+
+            {/* Mật mã & Mật thư đã giải */}
+            <div className="p-3.5 rounded-2xl bg-parchment-100 border border-parchment-300 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-lacquer/75 mb-1">
+                <span className="flex items-center gap-1 font-semibold">
+                  <KeyRound className="w-3.5 h-3.5 text-amber-700" />
+                  Mật Mã Đã Giải
+                </span>
+                <span className="text-[11px] font-bold text-amber-900 font-mono">
+                  {progress.solvedCiphers?.length || 0}/6
+                </span>
+              </div>
+              <div className="font-title font-bold text-xl sm:text-2xl text-lacquer tabular-nums">
+                {solvedCoreCount}/3 <span className="text-xs font-normal text-lacquer/60">Chính</span>
+              </div>
+              <p className="text-[11px] text-lacquer/70 truncate mt-0.5">
+                {solvedSecretCount > 0 ? `+${solvedSecretCount} Mật thư cổ ẩn` : 'Chưa tìm mật thư ẩn'}
+              </p>
+            </div>
+
+            {/* Dấu ấn & Huy chương đạt được */}
+            <div className="p-3.5 rounded-2xl bg-parchment-100 border border-parchment-300 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-lacquer/75 mb-1">
+                <span className="flex items-center gap-1 font-semibold">
+                  <Award className="w-3.5 h-3.5 text-crimson" />
+                  Huân Chương
+                </span>
+                <span className="text-[11px] font-bold text-emerald-800">
+                  {Math.round((unlockedCount / achievements.length) * 100)}%
+                </span>
+              </div>
+              <div className="font-title font-bold text-xl sm:text-2xl text-lacquer tabular-nums">
+                {unlockedCount} / {achievements.length}
+              </div>
+              <p className="text-[11px] text-lacquer/70 truncate mt-0.5">
+                Dấu ấn đã khắc vào sử
+              </p>
+            </div>
+
+            {/* Manh mối hiện vật */}
+            <div className="p-3.5 rounded-2xl bg-parchment-100 border border-parchment-300 flex flex-col justify-between">
+              <div className="flex items-center justify-between text-xs text-lacquer/75 mb-1">
+                <span className="flex items-center gap-1 font-semibold">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-700" />
+                  Manh Mối
+                </span>
+                <span className="text-[11px] font-bold text-emerald-800 font-mono">
+                  {progress.collectedClues.length}/9
+                </span>
+              </div>
+              <div className="font-title font-bold text-xl sm:text-2xl text-lacquer tabular-nums">
+                {progress.collectedClues.length} <span className="text-xs font-normal text-lacquer/60">Hiện vật</span>
+              </div>
+              <p className="text-[11px] text-lacquer/70 truncate mt-0.5">
+                Thu thập tại thực địa
+              </p>
+            </div>
+          </div>
+
+          {/* ===================================================================== */}
+          {/* HỆ THỐNG THÀNH TỰU & HUY CHƯƠNG / DẤU ẤN (ACHIEVEMENTS SYSTEM) */}
+          {/* ===================================================================== */}
+          <div className="mb-6 rounded-2xl bg-parchment-100/90 border-2 border-bronze/50 p-4 sm:p-5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+              <div>
+                <h3 className="font-title font-bold text-base sm:text-lg text-lacquer flex items-center gap-2">
+                  <Award className="w-5 h-5 text-crimson" />
+                  <span>Bảng Thành Tựu & Dấu Ấn Hoàng Triều</span>
+                </h3>
+                <p className="text-xs text-lacquer/70">
+                  Ghi danh công trạng dựa trên tốc độ hoàn thành, số lượng mật mã đã giải và độ chuẩn xác điều tra.
+                </p>
+              </div>
+              <div className="text-xs font-bold text-bronze-dark self-start sm:self-center">
+                Chạm vào ấn tín để soi sáng sử liệu
+              </div>
+            </div>
+
+            {/* Thanh Phân Loại / Filter Tabs (Tuân thủ Zero-Pill: Nút bấm phân đoạn) */}
+            <div className="flex flex-wrap items-center gap-1.5 p-1 bg-parchment-200/80 rounded-xl mb-4 border border-parchment-300">
+              {[
+                { id: 'all', label: `Tất cả (${achievements.length})` },
+                { id: 'speed', label: 'Tốc độ & Thời gian' },
+                { id: 'puzzle', label: 'Mật mã & Trí tuệ' },
+                { id: 'secret', label: 'Cơ mật & Mật thư' },
+                { id: 'mastery', label: 'Sử ký & Toàn thắng' },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => {
+                    sound.playClick();
+                    setActiveCategory(tab.id as AchievementCategory);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+                    activeCategory === tab.id
+                      ? 'bg-parchment-50 text-crimson shadow-sm border border-bronze/50'
+                      : 'text-lacquer/75 hover:text-lacquer hover:bg-parchment-100'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Lưới Huy Chương & Dấu Ấn */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+              {filteredAchievements.map((ach) => (
+                <AchievementSeal
+                  key={ach.id}
+                  achievement={ach}
+                  size="md"
+                  onClick={() => handleInspectAchievement(ach)}
+                />
+              ))}
             </div>
           </div>
 
@@ -277,7 +478,23 @@ export const SummaryScreen: React.FC = () => {
               className="w-full sm:w-auto flex-1 py-3 px-5 rounded-xl bg-crimson hover:bg-crimson-light text-white font-bold text-sm shadow-lg border-2 border-bronze flex items-center justify-center gap-2 active:scale-95"
             >
               <BookOpen className="w-4 h-4" />
-              <span>Mở Sổ Tay Sử Việt & Nguồn Tham Khảo</span>
+              <span>Mở Sổ Tay Sử Việt</span>
+            </button>
+
+            <button
+              onClick={() => openDailyMissions()}
+              className="w-full sm:w-auto py-3 px-5 rounded-xl bg-amber-800 hover:bg-amber-900 text-amber-100 font-bold text-sm shadow-lg border-2 border-amber-600 flex items-center justify-center gap-2 active:scale-95"
+            >
+              <Scroll className="w-4 h-4 text-amber-300" />
+              <span>Nhiệm Vụ Ngày ({progress.scholarPoints || 0}đ)</span>
+            </button>
+
+            <button
+              onClick={() => openHistoricalMissions()}
+              className="w-full sm:w-auto py-3 px-5 rounded-xl bg-red-900 hover:bg-red-950 text-amber-100 font-bold text-sm shadow-lg border-2 border-amber-500/80 flex items-center justify-center gap-2 active:scale-95"
+            >
+              <Compass className="w-4 h-4 text-amber-300" />
+              <span>Sa Bàn Sử ({progress.historicalMissions?.completedMissionIds?.length || 0}/4)</span>
             </button>
 
             <button
@@ -285,7 +502,7 @@ export const SummaryScreen: React.FC = () => {
               className="w-full sm:w-auto flex-1 py-3 px-5 rounded-xl bg-parchment-200 hover:bg-parchment-300 text-lacquer font-bold text-sm border-2 border-parchment-400 shadow flex items-center justify-center gap-2 active:scale-95"
             >
               <MapPin className="w-4 h-4 text-river-700" />
-              <span>Quay Lại Dạo Bước Thế Giới 2D</span>
+              <span>Dạo Bước Thế Giới 2D</span>
             </button>
 
             <button
@@ -298,6 +515,12 @@ export const SummaryScreen: React.FC = () => {
           </div>
         </div>
       </main>
+
+      {/* Modal Soi Chi Tiết Huy Chương / Triện Ấn Cổ */}
+      <AchievementDetailModal
+        achievement={selectedAchievement}
+        onClose={() => setSelectedAchievement(null)}
+      />
     </div>
   );
 };

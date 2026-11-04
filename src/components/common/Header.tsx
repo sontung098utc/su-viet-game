@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
-import { Volume2, VolumeX, BookOpen, Home, HelpCircle } from 'lucide-react';
+import { Volume2, VolumeX, BookOpen, Home, HelpCircle, Scroll, Compass } from 'lucide-react';
 import { HISTORICAL_FACTS_CH1 } from '../../data/chapter1';
 
 interface HeaderProps {
@@ -8,9 +8,11 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenHowToPlay }) => {
-  const { progress, setScreen, toggleSound, openCodex } = useGame();
+  const { progress, setScreen, toggleSound, openCodex, openDailyMissions, openHistoricalMissions } = useGame();
   const unlockedCount = progress.discoveredFacts.length;
   const totalCount = HISTORICAL_FACTS_CH1.length;
+  const scholarPoints = progress.scholarPoints || 0;
+  const pendingDaily = progress.dailyMissions?.missions?.filter((m) => !m.completed).length ?? 3;
 
   return (
     <header className="sticky top-0 z-30 bg-parchment-100/95 backdrop-blur-md border-b-2 border-parchment-300 px-3 sm:px-6 py-2.5 shadow-sm transition-all">
@@ -33,6 +35,30 @@ export const Header: React.FC<HeaderProps> = ({ onOpenHowToPlay }) => {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => openHistoricalMissions()}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-300 text-xs sm:text-sm font-semibold text-red-950 transition-colors shadow-sm"
+            title="Sa bàn tác chiến & Nhiệm vụ sử học chuyên sâu"
+          >
+            <Compass className="w-4 h-4 text-crimson" />
+            <span className="hidden sm:inline">Sa Bàn Sử</span>
+          </button>
+
+          <button
+            onClick={openDailyMissions}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-xs sm:text-sm font-semibold text-amber-950 transition-colors shadow-sm relative"
+            title="Nhiệm vụ sử học hằng ngày"
+          >
+            <Scroll className="w-4 h-4 text-amber-800" />
+            <span className="hidden xs:inline">Nhiệm vụ</span>
+            <span className="font-mono text-xs font-bold text-amber-900 bg-amber-200/80 px-1.5 py-0.5 rounded">
+              {scholarPoints}đ
+            </span>
+            {pendingDaily > 0 && (
+              <span className="w-2 h-2 rounded-full bg-crimson absolute -top-0.5 -right-0.5 ring-2 ring-parchment-100 animate-pulse" />
+            )}
+          </button>
+
           <button
             onClick={() => openCodex()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-parchment-200 hover:bg-parchment-300 border border-parchment-400 text-xs sm:text-sm font-semibold text-lacquer transition-colors shadow-sm"

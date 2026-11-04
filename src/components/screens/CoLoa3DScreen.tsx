@@ -7,21 +7,19 @@ import { RelicInspectionModal } from '../game3d/RelicInspectionModal';
 import { CoLoaPrologueModal } from '../game3d/CoLoaPrologueModal';
 import { CoLoaPuzzleModal } from '../game3d/CoLoaPuzzleModal';
 import { CoLoaDecoyModal, DECOYS_DATA, type DecoyInfo } from '../game3d/CoLoaDecoyModal';
-import { SmeltingPuzzleModal } from '../game3d/SmeltingPuzzleModal';
-import { StoryNarrationModal } from '../game3d/StoryNarrationModal';
 import { useGame } from '../../context/GameContext';
 import type { CoLoaRelicId } from '../../types';
 import { CO_LOA_STORY } from '../../data/chapterCoLoa';
 
 export const CoLoa3DScreen: React.FC = () => {
-  const { progress, setScreen, toggleSound, openCodex } = useGame();
+  const { progress, setScreen, toggleSound, openCodex, completeDailyExploration, openHistoricalMissions } = useGame();
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<CoLoa3DScene | null>(null);
 
+  // Gameplay State
   const [collectedShards, setCollectedShards] = useState<CoLoaRelicId[]>(
     progress.coLoaProgress?.collectedShards || []
   );
-  const initialShardsRef = useRef<CoLoaRelicId[]>(collectedShards);
   const [inspectedRelic, setInspectedRelic] = useState<CoLoaRelicId | null>(null);
   const [hoveredPrompt, setHoveredPrompt] = useState<{ id: string; name: string; prompt: string } | null>(null);
   const [compassYaw, setCompassYaw] = useState<number>(0);
@@ -31,21 +29,17 @@ export const CoLoa3DScreen: React.FC = () => {
   const [targetsHit, setTargetsHit] = useState<number>(0);
   const [isChapterVictory, setIsChapterVictory] = useState<boolean>(false);
 
-  // Chế độ góc nhìn 3D (Thứ nhất / Thứ ba)
-  const [cameraMode, setCameraMode] = useState<'FIRST_PERSON' | 'THIRD_PERSON'>('THIRD_PERSON');
-
-  // Modal States (Prologue, Puzzles, Decoys, Smelting, Narration)
+  // Modal States (Prologue, Puzzles, Decoys)
   const [isPrologueOpen, setIsPrologueOpen] = useState<boolean>(
     !progress.coLoaProgress?.chapterCompleted && collectedShards.length === 0
   );
   const [activePuzzleRelic, setActivePuzzleRelic] = useState<CoLoaRelicId | null>(null);
   const [activeDecoy, setActiveDecoy] = useState<DecoyInfo | null>(null);
-  const [isSmeltingOpen, setIsSmeltingOpen] = useState<boolean>(false);
-  const [activeNarrationAct, setActiveNarrationAct] = useState<string | null>(null);
 
   // Khởi tạo Scene 3D
   useEffect(() => {
     if (!mountRef.current) return;
+    completeDailyExploration('EXPLORE_CO_LOA');
 
     const sceneInstance = new CoLoa3DScene(
       mountRef.current,
@@ -56,16 +50,8 @@ export const CoLoa3DScreen: React.FC = () => {
         onOpenPuzzle: (relicId) => {
           setActivePuzzleRelic(relicId);
         },
-        onOpenSmelting: () => {
-          setIsSmeltingOpen(true);
-        },
-        onOpenNarration: (actId) => {
-          setActiveNarrationAct(actId || 'ACT_1_BUILD_CITADEL');
-        },
-        onCameraModeChange: (mode) => {
-          setCameraMode(mode);
-        },
         onInspectRelic: (relicId) => {
+          completeDailyExploration('INSPECT_RELIC');
           setCollectedShards((prev) => {
             const next = Array.from(new Set([...prev, relicId]));
             if (next.length >= 3) {
@@ -100,7 +86,7 @@ export const CoLoa3DScreen: React.FC = () => {
           setCompassTargets(targets);
         },
       },
-      initialShardsRef.current
+      collectedShards
     );
 
     sceneRef.current = sceneInstance;
@@ -159,7 +145,7 @@ export const CoLoa3DScreen: React.FC = () => {
       {/* 3D Canvas Viewport */}
       <div ref={mountRef} className="absolute inset-0 w-full h-full cursor-crosshair" />
 
-      {/* 3D First-Person & Third-Person HUD */}
+      {/* 3D First-Person HUD */}
       <CoLoaHUD
         collectedShards={collectedShards}
         hoveredPrompt={hoveredPrompt}
@@ -168,12 +154,10 @@ export const CoLoa3DScreen: React.FC = () => {
         isCrossbowReady={isCrossbowReady}
         isCrossbowAssembled={isCrossbowAssembled}
         targetsHit={targetsHit}
-        cameraMode={cameraMode}
-        onToggleCameraMode={() => sceneRef.current?.toggleCameraMode()}
-        onOpenNarration={(actId) => setActiveNarrationAct(actId || 'ACT_1_BUILD_CITADEL')}
         onInteractClick={handleInteractClick}
         onExitToMenu={handleExitToMenu}
         onOpenCodex={openCodex}
+        onOpenHistoricalMissions={() => openHistoricalMissions('MISSION_CO_LOA_BALLISTICS')}
         soundEnabled={progress.soundEnabled}
         onToggleSound={toggleSound}
         onMobileMove={handleMobileMove}
@@ -203,23 +187,6 @@ export const CoLoa3DScreen: React.FC = () => {
       <RelicInspectionModal
         relicId={inspectedRelic}
         onClose={() => setInspectedRelic(null)}
-      />
-
-      {/* 5. Trò Chơi Luyện Kim Đúc Mũi Tên Đồng Cổ Loa (Đông Sơn Metallurgy) */}
-      <SmeltingPuzzleModal
-        isOpen={isSmeltingOpen}
-        onSuccess={() => {
-          handleSolvePuzzleSuccess('SHARD_BRONZE_ARROWS');
-          setIsSmeltingOpen(false);
-        }}
-        onClose={() => setIsSmeltingOpen(false)}
-      />
-
-      {/* 6. Lời Dẫn Truyện Lịch Sử Chuẩn Đại Việt Sử Ký Toàn Thư (Voice Narration) */}
-      <StoryNarrationModal
-        actId={activeNarrationAct}
-        isOpen={Boolean(activeNarrationAct)}
-        onClose={() => setActiveNarrationAct(null)}
       />
 
       {/* 5. Cột Mốc Vinh Quang & Phục Dựng Lịch Sử (Chapter Victory) */}

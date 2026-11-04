@@ -10,11 +10,13 @@ import type {
   FloodedPathSolution,
   ClueId,
   CipherPuzzleId,
+  DailyExplorationTarget,
+  HistoricalMissionId,
 } from '../types';
 import { storage, DEFAULT_USER_PROGRESS } from '../utils/storage';
 import { sound } from '../utils/sound';
 import { voiceManager } from '../utils/voiceManager';
-import { vietnameseAmbientMusic } from '../utils/vietnameseAmbientMusic';
+import { getDailyMissionsForDate, DAILY_COMPLETION_BONUS_POINTS } from '../data/dailyMissions';
 
 interface AdvanceQuestOptions {
   addItems?: InventoryItemId[];
@@ -59,6 +61,21 @@ interface GameContextType {
   closeCodex: () => void;
   clearFactToast: () => void;
   clearClueToast: () => void;
+  isDailyMissionsOpen: boolean;
+  openDailyMissions: () => void;
+  closeDailyMissions: () => void;
+  answerDailyTrivia: (missionId: string, answerIndex: number) => { isCorrect: boolean; pointsAwarded: number; explanation: string };
+  completeDailyExploration: (target: DailyExplorationTarget) => boolean;
+  claimDailyBonus: () => boolean;
+  isHistoricalMissionsOpen: boolean;
+  activeHistoricalMissionId: HistoricalMissionId | null;
+  openHistoricalMissions: (missionId?: HistoricalMissionId) => void;
+  closeHistoricalMissions: () => void;
+  recordHistoricalMissionCompletion: (
+    missionId: HistoricalMissionId,
+    score: number,
+    details?: any
+  ) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -66,6 +83,9 @@ const GameContext = createContext<GameContextType | undefined>(undefined);
 export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [progress, setProgress] = useState<UserProgress>(() => storage.load());
   const [isCodexOpen, setIsCodexOpen] = useState(false);
+  const [isDailyMissionsOpen, setIsDailyMissionsOpen] = useState(false);
+  const [isHistoricalMissionsOpen, setIsHistoricalMissionsOpen] = useState(false);
+  const [activeHistoricalMissionId, setActiveHistoricalMissionId] = useState<HistoricalMissionId | null>(null);
   const [selectedFactId, setSelectedFactId] = useState<string | null>(null);
   const [hasSavedGame, setHasSavedGame] = useState<boolean>(() => storage.hasSavedGame());
   const [newFactToast, setNewFactToast] = useState<string | null>(null);
@@ -84,10 +104,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
     sound.setMixSettings(audioCfg);
     voiceManager.syncSettings(audioCfg);
-    vietnameseAmbientMusic.setMuted(!audioCfg.soundEnabled);
-    if (typeof audioCfg.bgmVolume === 'number') {
-      vietnameseAmbientMusic.setVolume(audioCfg.bgmVolume);
-    }
   }, [progress.audioSettings, progress.soundEnabled]);
 
   const updateProgress = useCallback((updater: (prev: UserProgress) => UserProgress) => {
@@ -104,10 +120,25 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       voiceManager.unlockAudio();
       voiceManager.stop();
       sound.playClick();
-      updateProgress((prev) => ({
-        ...prev,
-        currentScreen: screen,
-      }));
+      updateProgress((prev) => {
+        let nextCompletedAt = prev.completedAt;
+        let nextTotalTimeSeconds = prev.totalPlayTimeSeconds;
+
+        if (screen === 'SUMMARY' && !nextTotalTimeSeconds) {
+          const now = Date.now();
+          const startMs = prev.startedAt ? new Date(prev.startedAt).getTime() : now - 240000;
+          const elapsed = Math.max(1, Math.round((now - startMs) / 1000));
+          nextCompletedAt = nextCompletedAt || new Date(now).toISOString();
+          nextTotalTimeSeconds = elapsed;
+        }
+
+        return {
+          ...prev,
+          currentScreen: screen,
+          completedAt: nextCompletedAt,
+          totalPlayTimeSeconds: nextTotalTimeSeconds,
+        };
+      });
     },
     [updateProgress]
   );
@@ -150,6 +181,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         floodedPathSolution: 'NONE',
         chapter1Completed: false,
         completedRecapOrder: false,
+        startedAt: new Date().toISOString(),
+        completedAt: undefined,
+        totalPlayTimeSeconds: undefined,
       }));
     },
     [updateProgress]
@@ -333,11 +367,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const completeRecap = useCallback(() => {
     voiceManager.stop();
     sound.playChapterVictory();
-    updateProgress((prev) => ({
-      ...prev,
-      completedRecapOrder: true,
-      chapter1Completed: true,
-    }));
+    updateProgress((prev) => {
+      const now = Date.now();
+      const startMs = prev.startedAt ? new Date(prev.startedAt).getTime() : now - 240000;
+      const elapsed = prev.totalPlayTimeSeconds || Math.max(1, Math.round((now - startMs) / 1000));
+      return {
+        ...prev,
+        completedRecapOrder: true,
+        chapter1Completed: true,
+        completedAt: prev.completedAt || new Date(now).toISOString(),
+        totalPlayTimeSeconds: elapsed,
+      };
+    });
   }, [updateProgress]);
 
   const restartAdventure = useCallback(() => {
@@ -356,6 +397,10 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       observedHighTideMarker: false,
       helpedVillagerWood: false,
       floodedPathSolution: 'NONE',
+      completedRecapOrder: false,
+      startedAt: new Date().toISOString(),
+      completedAt: undefined,
+      totalPlayTimeSeconds: undefined,
     }));
   }, [updateProgress]);
 
@@ -368,12 +413,134 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setIsFreshCharacterSetup(true);
   }, []);
 
-  const openCodex = useCallback((factId?: string) => {
-    voiceManager.stop();
+  const openDailyMissions = useCallback(() => {
     sound.playClick();
-    setSelectedFactId(factId || null);
-    setIsCodexOpen(true);
+    setIsDailyMissionsOpen(true);
   }, []);
+
+  const closeDailyMissions = useCallback(() => {
+    sound.playClick();
+    setIsDailyMissionsOpen(false);
+  }, []);
+
+  const completeDailyExploration = useCallback(
+    (target: DailyExplorationTarget): boolean => {
+      let completedAny = false;
+      updateProgress((prev) => {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const currentDaily = getDailyMissionsForDate(todayStr, prev.dailyMissions);
+        let pointsEarned = 0;
+        const updatedMissions = currentDaily.missions.map((m) => {
+          if (m.type === 'EXPLORATION' && m.explorationTarget === target && !m.completed) {
+            completedAny = true;
+            pointsEarned += m.points;
+            return { ...m, completed: true };
+          }
+          return m;
+        });
+
+        if (!completedAny) return prev;
+
+        sound.playSuccess();
+        return {
+          ...prev,
+          scholarPoints: (prev.scholarPoints || 0) + pointsEarned,
+          dailyMissions: {
+            ...currentDaily,
+            missions: updatedMissions,
+          },
+        };
+      });
+      return completedAny;
+    },
+    [updateProgress]
+  );
+
+  const answerDailyTrivia = useCallback(
+    (missionId: string, answerIndex: number) => {
+      let result = { isCorrect: false, pointsAwarded: 0, explanation: '' };
+      updateProgress((prev) => {
+        const todayStr = new Date().toISOString().slice(0, 10);
+        const currentDaily = getDailyMissionsForDate(todayStr, prev.dailyMissions);
+        const mission = currentDaily.missions.find((m) => m.id === missionId);
+        if (!mission || mission.completed) {
+          return prev;
+        }
+
+        const isCorrect = answerIndex === mission.correctIndex;
+        const pointsAwarded = isCorrect ? mission.points : 0;
+        result = {
+          isCorrect,
+          pointsAwarded,
+          explanation: mission.explanation || '',
+        };
+
+        if (isCorrect) {
+          sound.playSuccess();
+        } else {
+          sound.playError();
+        }
+
+        const updatedMissions = currentDaily.missions.map((m) => {
+          if (m.id === missionId) {
+            return {
+              ...m,
+              completed: isCorrect,
+              userAnswerIndex: answerIndex,
+            };
+          }
+          return m;
+        });
+
+        return {
+          ...prev,
+          scholarPoints: (prev.scholarPoints || 0) + pointsAwarded,
+          dailyMissions: {
+            ...currentDaily,
+            missions: updatedMissions,
+          },
+        };
+      });
+      return result;
+    },
+    [updateProgress]
+  );
+
+  const claimDailyBonus = useCallback((): boolean => {
+    let success = false;
+    updateProgress((prev) => {
+      const todayStr = new Date().toISOString().slice(0, 10);
+      const currentDaily = getDailyMissionsForDate(todayStr, prev.dailyMissions);
+      const allCompleted = currentDaily.missions.length === 3 && currentDaily.missions.every((m) => m.completed);
+      if (!allCompleted || currentDaily.dailyBonusClaimed) {
+        return prev;
+      }
+
+      success = true;
+      sound.playChapterVictory();
+      return {
+        ...prev,
+        scholarPoints: (prev.scholarPoints || 0) + DAILY_COMPLETION_BONUS_POINTS,
+        dailyMissions: {
+          ...currentDaily,
+          dailyBonusClaimed: true,
+          lastCompletedDate: todayStr,
+        },
+      };
+    });
+    return success;
+  }, [updateProgress]);
+
+  const openCodex = useCallback(
+    (factId?: string) => {
+      voiceManager.stop();
+      sound.playClick();
+      setSelectedFactId(factId || null);
+      setIsCodexOpen(true);
+      completeDailyExploration('READ_CODEX');
+    },
+    [completeDailyExploration]
+  );
 
   const closeCodex = useCallback(() => {
     sound.playClick();
@@ -401,11 +568,88 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const solveCipher = useCallback(
     (puzzleId: CipherPuzzleId) => {
       sound.playSuccess();
+      completeDailyExploration('SOLVE_CIPHER');
       updateProgress((prev) => {
         if (prev.solvedCiphers?.includes(puzzleId)) return prev;
         return {
           ...prev,
           solvedCiphers: [...(prev.solvedCiphers || []), puzzleId],
+        };
+      });
+    },
+    [updateProgress, completeDailyExploration]
+  );
+
+  const openHistoricalMissions = useCallback((missionId?: HistoricalMissionId) => {
+    sound.playClick();
+    setActiveHistoricalMissionId(missionId || null);
+    setIsHistoricalMissionsOpen(true);
+  }, []);
+
+  const closeHistoricalMissions = useCallback(() => {
+    sound.playClick();
+    setIsHistoricalMissionsOpen(false);
+    setActiveHistoricalMissionId(null);
+  }, []);
+
+  const recordHistoricalMissionCompletion = useCallback(
+    (missionId: HistoricalMissionId, score: number, details?: any) => {
+      sound.playSuccess();
+      updateProgress((prev) => {
+        const prevCompleted = prev.historicalMissions?.completedMissionIds || [];
+        const isNewCompletion = !prevCompleted.includes(missionId);
+        const nextCompleted = isNewCompletion ? [...prevCompleted, missionId] : prevCompleted;
+
+        const bonusPoints = isNewCompletion ? 100 : 25;
+        const currentPoints = prev.scholarPoints || 0;
+
+        let nextHistorical = {
+          ...(prev.historicalMissions || { completedMissionIds: [] }),
+          completedMissionIds: nextCompleted,
+        };
+
+        if (missionId === 'MISSION_TACTICAL_SANDTABLE' && details) {
+          nextHistorical = {
+            ...nextHistorical,
+            sandtableDecisions: {
+              ...(nextHistorical.sandtableDecisions || {}),
+              ...details,
+              score: Math.max(score, nextHistorical.sandtableDecisions?.score || 0),
+            },
+          };
+        } else if (missionId === 'MISSION_CO_LOA_BALLISTICS' && details) {
+          nextHistorical = {
+            ...nextHistorical,
+            archaeologyDecisions: {
+              ...(nextHistorical.archaeologyDecisions || { assembledParts: [], testedAerodynamics: false, discoveredExcavation: false }),
+              ...details,
+              score: Math.max(score, nextHistorical.archaeologyDecisions?.score || 0),
+            },
+          };
+        } else if (missionId === 'MISSION_WAR_COUNCIL_DEBATE' && details) {
+          nextHistorical = {
+            ...nextHistorical,
+            warCouncilDecisions: {
+              ...(nextHistorical.warCouncilDecisions || {}),
+              ...details,
+              score: Math.max(score, nextHistorical.warCouncilDecisions?.score || 0),
+            },
+          };
+        } else if (missionId === 'MISSION_LOGISTICS_AND_PEOPLE' && details) {
+          nextHistorical = {
+            ...nextHistorical,
+            logisticsDecisions: {
+              ...(nextHistorical.logisticsDecisions || { woodLogged: false, ironForged: false, pitchSealed: false }),
+              ...details,
+              score: Math.max(score, nextHistorical.logisticsDecisions?.score || 0),
+            },
+          };
+        }
+
+        return {
+          ...prev,
+          scholarPoints: currentPoints + bonusPoints,
+          historicalMissions: nextHistorical,
         };
       });
     },
@@ -447,6 +691,17 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeCodex,
         clearFactToast,
         clearClueToast,
+        isDailyMissionsOpen,
+        openDailyMissions,
+        closeDailyMissions,
+        answerDailyTrivia,
+        completeDailyExploration,
+        claimDailyBonus,
+        isHistoricalMissionsOpen,
+        activeHistoricalMissionId,
+        openHistoricalMissions,
+        closeHistoricalMissions,
+        recordHistoricalMissionCompletion,
       }}
     >
       {children}

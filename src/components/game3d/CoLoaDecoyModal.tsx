@@ -37,33 +37,6 @@ export const DECOYS_DATA: Record<string, DecoyInfo> = {
     historicalTruth:
       'Tướng quân Cao Lỗ đã lường trước dã tâm của giặc nên đã bí mật lập trận đồ niêm phong lẫy nỏ thật tại Đàn Tế Giếng Ngọc.',
   },
-  DECOY_WELL_TRONG_THUY: {
-    id: 'DECOY_WELL_TRONG_THUY',
-    title: 'Giếng Ngọc Trọng Thủy - Mỵ Châu',
-    location: 'Bờ Thành Ngoại Phía Đông Nam',
-    warningNote:
-      'KHẢO SÁT HIỆN TRƯỜNG: Nước giếng trong xanh thấu đáy, tương truyền đem ngọc trai rửa nước giếng này thì ngọc sáng lung linh. Nơi đây từng là nơi Trọng Thủy nhảy xuống tự vẫn sau nỗi ân hận tột cùng.',
-    historicalTruth:
-      'Đại Việt Sử Ký Toàn Thư chép: Trọng Thủy theo dấu lông ngỗng tìm đến bờ biển, thấy Mỵ Châu đã chết bèn ôm xác khóc lóc đem về táng ở Loa Thành, sau quá thương nhớ đâm đầu xuống giếng mà chết.',
-  },
-  DECOY_SILK_QUIVER: {
-    id: 'DECOY_SILK_QUIVER',
-    title: 'Hòm Ống Tên Thêu Gấm Nhà Hán',
-    location: 'Doanh Trại Thành Trung',
-    warningNote:
-      'CẢNH BÁO TỬ HUYỆT: Ống tên này dùng mũi tên thép nhẹ kiểu Bắc Phương, không phù hợp với rãnh nỏ liên châu Âu Lạc, nếu nạp vào sẽ kẹt then nổ văng cung!',
-    historicalTruth:
-      'Nỏ thần Cổ Loa được thiết kế đặc thù cho mũi tên đồng 3 cạnh Cầu Vực với trọng tâm khí động học dồn về phía mũi tên, không thể dùng lẫn với tên ngoại lai.',
-  },
-  DECOY_GOLDEN_BOW: {
-    id: 'DECOY_GOLDEN_BOW',
-    title: 'Cung Gỗ Khảm Vàng Lễ Nghi',
-    location: 'Kho Cung Đình Phía Đông',
-    warningNote:
-      'HIỆN VẬT LỄ NGHI: Đây là cung biểu diễn tế lễ mùa xuân của hoàng gia, tuy nạm vàng lộng lẫy nhưng lực bắn chỉ đạt 40 bước chân, không thể phòng thủ bờ thành!',
-    historicalTruth:
-      'Vũ khí thực chiến của tướng sĩ Âu Lạc là Nỏ Thần Cơ Khí có sức kéo 400 cân lực (400 lbs), bắn ra hàng chục mũi tên cùng lúc, uy lực vượt xa cung gỗ nghi lễ.',
-  },
 };
 
 interface CoLoaDecoyModalProps {

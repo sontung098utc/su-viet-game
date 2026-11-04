@@ -1,8 +1,11 @@
 import type { UserProgress, QuestStage, ClueId } from '../types';
 import { QUEST_OBJECTIVES, VISUAL_CLUES } from '../data/chapter1';
+import { getDailyMissionsForDate } from '../data/dailyMissions';
 
 const STORAGE_KEY = 'MAT_MA_SU_VIET_PROGRESS_V1';
 export const CURRENT_SCHEMA_VERSION = 3;
+
+const INITIAL_TODAY_STR = new Date().toISOString().slice(0, 10);
 
 export const DEFAULT_USER_PROGRESS: UserProgress = {
   schemaVersion: CURRENT_SCHEMA_VERSION,
@@ -52,6 +55,14 @@ export const DEFAULT_USER_PROGRESS: UserProgress = {
     chapterCompleted: false,
   },
   completedRecapOrder: false,
+  startedAt: new Date().toISOString(),
+  completedAt: undefined,
+  totalPlayTimeSeconds: undefined,
+  scholarPoints: 0,
+  dailyMissions: getDailyMissionsForDate(INITIAL_TODAY_STR),
+  historicalMissions: {
+    completedMissionIds: [],
+  },
   lastSavedAt: new Date().toISOString(),
 };
 
@@ -126,6 +137,16 @@ export const storage = {
           ...DEFAULT_USER_PROGRESS.missions,
           ...(parsed.missions || {}),
         },
+        startedAt: typeof parsed.startedAt === 'string' ? parsed.startedAt : DEFAULT_USER_PROGRESS.startedAt,
+        completedAt: typeof parsed.completedAt === 'string' ? parsed.completedAt : undefined,
+        totalPlayTimeSeconds: typeof parsed.totalPlayTimeSeconds === 'number' ? parsed.totalPlayTimeSeconds : undefined,
+        scholarPoints: typeof parsed.scholarPoints === 'number' ? Math.max(0, parsed.scholarPoints) : 0,
+        dailyMissions: parsed.dailyMissions
+          ? getDailyMissionsForDate(new Date().toISOString().slice(0, 10), parsed.dailyMissions)
+          : getDailyMissionsForDate(new Date().toISOString().slice(0, 10)),
+        historicalMissions: parsed.historicalMissions && Array.isArray(parsed.historicalMissions.completedMissionIds)
+          ? parsed.historicalMissions
+          : DEFAULT_USER_PROGRESS.historicalMissions,
       };
     } catch (err) {
       console.warn('Lỗi khi tải tiến trình từ localStorage, khôi phục mặc định:', err);
