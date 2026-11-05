@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useGame } from '../../context/GameContext';
-import { Play, HelpCircle, Volume2, VolumeX, Shield, Trash2, ArrowRight, BookOpen, Sparkles, Box, Scroll, Compass } from 'lucide-react';
+import { Play, HelpCircle, Volume2, VolumeX, Shield, Trash2, ArrowRight, BookOpen, Sparkles, Box, Scroll, Compass, Trophy } from 'lucide-react';
 import { HowToPlayModal } from '../common/HowToPlayModal';
 import { ResetConfirmModal } from '../common/ResetConfirmModal';
 
@@ -15,6 +15,7 @@ export const StartScreen: React.FC = () => {
     openCodex,
     openDailyMissions,
     openHistoricalMissions,
+    openAchievements,
   } = useGame();
   const [isHowToPlayOpen, setIsHowToPlayOpen] = useState(false);
   const [isResetConfirmOpen, setIsResetConfirmOpen] = useState(false);
@@ -45,6 +46,15 @@ export const StartScreen: React.FC = () => {
           Phiêu Lưu Nhập Vai 2D • Năm 938
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => openAchievements()}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-100/90 border border-amber-300 text-xs font-semibold text-amber-950 hover:bg-amber-200 transition-colors shadow-sm"
+            title="Kho Báu Thành Tựu & Huy Hiệu Kỹ Thuật Số"
+          >
+            <Trophy className="w-3.5 h-3.5 text-amber-700" />
+            <span className="hidden sm:inline">Thành tựu</span>
+            <span>({progress.unlockedAchievementIds?.length || 0})</span>
+          </button>
           <button
             onClick={() => openHistoricalMissions()}
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-red-100/90 border border-red-300 text-xs font-semibold text-red-950 hover:bg-red-200 transition-colors shadow-sm"

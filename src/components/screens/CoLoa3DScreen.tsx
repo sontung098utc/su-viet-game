@@ -12,7 +12,15 @@ import type { CoLoaRelicId } from '../../types';
 import { CO_LOA_STORY } from '../../data/chapterCoLoa';
 
 export const CoLoa3DScreen: React.FC = () => {
-  const { progress, setScreen, toggleSound, openCodex, completeDailyExploration, openHistoricalMissions } = useGame();
+  const {
+    progress,
+    setScreen,
+    toggleSound,
+    openCodex,
+    completeDailyExploration,
+    openHistoricalMissions,
+    openAchievements,
+  } = useGame();
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<CoLoa3DScene | null>(null);
 
@@ -158,6 +166,8 @@ export const CoLoa3DScreen: React.FC = () => {
         onExitToMenu={handleExitToMenu}
         onOpenCodex={openCodex}
         onOpenHistoricalMissions={() => openHistoricalMissions('MISSION_CO_LOA_BALLISTICS')}
+        onOpenAchievements={openAchievements}
+        unlockedAchievementsCount={progress.unlockedAchievementIds?.length || 0}
         soundEnabled={progress.soundEnabled}
         onToggleSound={toggleSound}
         onMobileMove={handleMobileMove}

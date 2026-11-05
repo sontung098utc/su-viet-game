@@ -9,9 +9,11 @@ import { CodexModal } from './components/common/CodexModal';
 import { CipherPuzzleModal } from './components/modals/CipherPuzzleModal';
 import { DailyMissionsModal } from './components/modals/DailyMissionsModal';
 import { HistoricalMissionsModal } from './components/modals/HistoricalMissionsModal';
+import { AchievementsModal } from './components/modals/AchievementsModal';
+import { AchievementToast } from './components/common/AchievementToast';
 
 const GameRouter: React.FC = () => {
-  const { progress } = useGame();
+  const { progress, newAchievementToast, clearAchievementToast, openAchievements } = useGame();
 
   return (
     <>
@@ -29,6 +31,14 @@ const GameRouter: React.FC = () => {
       <DailyMissionsModal />
       {/* Phòng Sa Bàn & Nhiệm Vụ Sử Học Đa Dạng */}
       <HistoricalMissionsModal />
+      {/* Kho Báu Thành Tựu & Huy Hiệu Kỹ Thuật Số */}
+      <AchievementsModal />
+      {/* Thông Báo Mở Khóa Thành Tựu Nổi */}
+      <AchievementToast
+        achievement={newAchievementToast}
+        onClose={clearAchievementToast}
+        onOpenAchievements={openAchievements}
+      />
     </>
   );
 };

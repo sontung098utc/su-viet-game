@@ -13,6 +13,7 @@ import {
   NPC_DIRECTORY,
   interpolatePlayerText,
 } from '../data/voiceDialogue';
+import { evaluateAchievements, ACHIEVEMENTS_CATALOG } from '../data/achievements';
 import type { UserProgress, QuestStage } from '../types';
 
 const localStorageMock = (() => {
@@ -525,5 +526,132 @@ describe('10. Hệ Thống Nhiệm Vụ Sử Học Đa Dạng Dành Cho Học Si
     expect(reloaded.historicalMissions?.sandtableDecisions?.score).toBe(100);
   });
 });
+
+describe('8. Hệ Thống Thành Tựu & Dấu Ấn Số (Achievements Module & Milestone Badges)', () => {
+  beforeEach(() => {
+    localStorageMock.clear();
+  });
+
+  it('Danh mục thành tựu có đủ các cột mốc đặc biệt bao gồm First Puzzle Solved và Historical Explorer', () => {
+    const firstPuzzleAch = ACHIEVEMENTS_CATALOG.find((a) => a.id === 'ACH_FIRST_PUZZLE');
+    expect(firstPuzzleAch).toBeDefined();
+    expect(firstPuzzleAch?.title).toBe('Khởi Đầu Giải Mã');
+    expect(firstPuzzleAch?.subtitle).toBe('First Puzzle Solved');
+    expect(firstPuzzleAch?.sealName).toBe('Khai Mật Bảo Ấn');
+    expect(firstPuzzleAch?.category).toBe('milestone');
+    expect(firstPuzzleAch?.tier).toBe('bronze');
+    expect(firstPuzzleAch?.iconType).toBe('first_puzzle');
+    expect(firstPuzzleAch?.description).toContain('Giải thành công câu đố mật mã đầu tiên');
+
+    const explorerAch = ACHIEVEMENTS_CATALOG.find((a) => a.id === 'ACH_HISTORICAL_EXPLORER');
+    expect(explorerAch).toBeDefined();
+    expect(explorerAch?.title).toBe('Nhà Thám Hiểm Lịch Sử');
+    expect(explorerAch?.subtitle).toBe('Historical Explorer');
+    expect(explorerAch?.sealName).toBe('Hành Trình Vạn Lý');
+    expect(explorerAch?.category).toBe('exploration');
+    expect(explorerAch?.tier).toBe('silver');
+    expect(explorerAch?.iconType).toBe('explorer');
+    expect(explorerAch?.description).toContain('mở khóa ít nhất 5 sự kiện sử ký');
+  });
+
+  it('Đánh giá mở khóa cột mốc First Puzzle Solved chính xác khi giải được ít nhất 1 mật mã', () => {
+    // Chưa giải mật mã nào
+    const noPuzzleProgress: UserProgress = {
+      ...DEFAULT_USER_PROGRESS,
+      solvedCiphers: [],
+    };
+    const listBefore = evaluateAchievements(noPuzzleProgress, 120);
+    const firstBefore = listBefore.find((a) => a.id === 'ACH_FIRST_PUZZLE');
+    expect(firstBefore?.isUnlocked).toBe(false);
+    expect(firstBefore?.progressPercent).toBe(0);
+
+    // Đã giải 1 mật mã
+    const onePuzzleProgress: UserProgress = {
+      ...DEFAULT_USER_PROGRESS,
+      solvedCiphers: ['CIPHER_VILLAGE_SCROLL'],
+    };
+    const listAfter = evaluateAchievements(onePuzzleProgress, 120);
+    const firstAfter = listAfter.find((a) => a.id === 'ACH_FIRST_PUZZLE');
+    expect(firstAfter?.isUnlocked).toBe(true);
+    expect(firstAfter?.progressPercent).toBe(100);
+  });
+
+  it('Đánh giá mở khóa cột mốc Historical Explorer chính xác khi tích lũy đủ 5 sự kiện sử học', () => {
+    // 3 sự kiện (chưa đủ 5)
+    const explorerProgress3: UserProgress = {
+      ...DEFAULT_USER_PROGRESS,
+      discoveredFacts: ['fact_1_ngo_quyen', 'fact_2_kieu_cong_tien', 'fact_3_co_dinh_sat'],
+    };
+    const list3 = evaluateAchievements(explorerProgress3, 120);
+    const explorer3 = list3.find((a) => a.id === 'ACH_HISTORICAL_EXPLORER');
+    expect(explorer3?.isUnlocked).toBe(false);
+    expect(explorer3?.progressPercent).toBe(60);
+
+    // 5 sự kiện (đủ điều kiện)
+    const explorerProgress5: UserProgress = {
+      ...DEFAULT_USER_PROGRESS,
+      discoveredFacts: [
+        'fact_1_ngo_quyen',
+        'fact_2_kieu_cong_tien',
+        'fact_3_co_dinh_sat',
+        'fact_4_thuy_trieu',
+        'fact_5_luu_hoang_thao',
+      ],
+    };
+    const list5 = evaluateAchievements(explorerProgress5, 120);
+    const explorer5 = list5.find((a) => a.id === 'ACH_HISTORICAL_EXPLORER');
+    expect(explorer5?.isUnlocked).toBe(true);
+    expect(explorer5?.progressPercent).toBe(100);
+  });
+
+  it('Mở khóa các huy chương Cổ Loa, Sa Bàn Chiến Thuật và Điểm Học Giả', () => {
+    const fullProgress: UserProgress = {
+      ...DEFAULT_USER_PROGRESS,
+      scholarPoints: 120,
+      coLoaProgress: {
+        chapterCompleted: true,
+        collectedShards: ['SHARD_CROSSBOW_STOCK', 'SHARD_TURTLE_TRIGGER', 'SHARD_BRONZE_ARROWS'],
+        crossbowAssembled: true,
+        targetsDestroyed: 5,
+        inspectedRelic: null,
+      },
+      historicalMissions: {
+        completedMissionIds: ['MISSION_TACTICAL_SANDTABLE'],
+        sandtableDecisions: {
+          tideTiming: 'NOON_FLOOD_AFTERNOON_EBB',
+          woodMaterial: 'IRONWOOD_LIM',
+          stakeAngle: 'SLANTED_45_EBB',
+          fleetTactic: 'FEIGNED_RETREAT_BAIT',
+          score: 100,
+        },
+      },
+    };
+
+    const achievements = evaluateAchievements(fullProgress, 150);
+    const scholarRising = achievements.find((a) => a.id === 'ACH_SCHOLAR_RISING');
+    const coloDiscovery = achievements.find((a) => a.id === 'ACH_CO_LOA_DISCOVERY');
+    const sandtableStrat = achievements.find((a) => a.id === 'ACH_STRATEGIST_SANDTABLE');
+
+    expect(scholarRising?.isUnlocked).toBe(true);
+    expect(coloDiscovery?.isUnlocked).toBe(true);
+    expect(sandtableStrat?.isUnlocked).toBe(true);
+  });
+
+  it('Lưu trữ và phục hồi unlockedAchievementIds một cách toàn vẹn qua LocalStorage', () => {
+    const initialProgress: UserProgress = {
+      ...DEFAULT_USER_PROGRESS,
+      playerName: 'Lý Quốc Sư',
+      unlockedAchievementIds: ['ACH_FIRST_PUZZLE', 'ACH_HISTORICAL_EXPLORER'],
+    };
+
+    expect(storage.save(initialProgress)).toBe(true);
+    const loaded = storage.load();
+
+    expect(loaded.unlockedAchievementIds).toBeDefined();
+    expect(loaded.unlockedAchievementIds).toContain('ACH_FIRST_PUZZLE');
+    expect(loaded.unlockedAchievementIds).toContain('ACH_HISTORICAL_EXPLORER');
+  });
+});
+
 
 

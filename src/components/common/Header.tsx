@@ -1,6 +1,6 @@
 import React from 'react';
 import { useGame } from '../../context/GameContext';
-import { Volume2, VolumeX, BookOpen, Home, HelpCircle, Scroll, Compass } from 'lucide-react';
+import { Volume2, VolumeX, BookOpen, Home, HelpCircle, Scroll, Compass, Trophy } from 'lucide-react';
 import { HISTORICAL_FACTS_CH1 } from '../../data/chapter1';
 
 interface HeaderProps {
@@ -8,11 +8,20 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onOpenHowToPlay }) => {
-  const { progress, setScreen, toggleSound, openCodex, openDailyMissions, openHistoricalMissions } = useGame();
+  const {
+    progress,
+    setScreen,
+    toggleSound,
+    openCodex,
+    openDailyMissions,
+    openHistoricalMissions,
+    openAchievements,
+  } = useGame();
   const unlockedCount = progress.discoveredFacts.length;
   const totalCount = HISTORICAL_FACTS_CH1.length;
   const scholarPoints = progress.scholarPoints || 0;
   const pendingDaily = progress.dailyMissions?.missions?.filter((m) => !m.completed).length ?? 3;
+  const unlockedBadgesCount = progress.unlockedAchievementIds?.length || 0;
 
   return (
     <header className="sticky top-0 z-30 bg-parchment-100/95 backdrop-blur-md border-b-2 border-parchment-300 px-3 sm:px-6 py-2.5 shadow-sm transition-all">
@@ -35,6 +44,20 @@ export const Header: React.FC<HeaderProps> = ({ onOpenHowToPlay }) => {
         </div>
 
         <div className="flex items-center gap-2 sm:gap-3">
+          <button
+            onClick={() => openAchievements()}
+            className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 border border-amber-300 text-xs sm:text-sm font-semibold text-amber-950 transition-colors shadow-sm"
+            title="Kho báu thành tựu & Huy hiệu số"
+          >
+            <Trophy className="w-4 h-4 text-amber-700" />
+            <span className="hidden sm:inline">Thành tựu</span>
+            {unlockedBadgesCount > 0 && (
+              <span className="bg-amber-700 text-white text-[10px] px-1.5 py-0.2 rounded-full font-bold">
+                {unlockedBadgesCount}
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => openHistoricalMissions()}
             className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg bg-red-50 hover:bg-red-100 border border-red-300 text-xs sm:text-sm font-semibold text-red-950 transition-colors shadow-sm"

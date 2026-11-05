@@ -238,6 +238,7 @@ export interface UserProgress {
   scholarPoints?: number;
   dailyMissions?: DailyMissionsState;
   historicalMissions?: HistoricalMissionsProgress;
+  unlockedAchievementIds?: string[];
   lastSavedAt: string;
 }
 
@@ -338,6 +339,13 @@ export interface DailyMissionsState {
 }
 
 export type AchievementId =
+  | 'ACH_FIRST_PUZZLE'             // 'First Puzzle Solved' (Mật Mã Đầu Tiên)
+  | 'ACH_HISTORICAL_EXPLORER'      // 'Historical Explorer' (Nhà Thám Hiểm Lịch Sử)
+  | 'ACH_CO_LOA_DISCOVERY'         // Bảo Vật Âu Lạc (Cổ Loa Relic Hunter)
+  | 'ACH_SCHOLAR_RISING'           // Bước Chân Sĩ Tử (100+ Scholar Points)
+  | 'ACH_STRATEGIST_SANDTABLE'     // Chiến Lược Gia Sa Bàn Bạch Đằng
+  | 'ACH_ARCHAEOLOGY_MASTER'       // Bậc Thầy Khảo Cổ Nỏ Thần
+  | 'ACH_LOGISTICS_SUPPORTER'      // Hậu Phương Toàn Dân
   | 'ACH_SPEED_GOLD'
   | 'ACH_SPEED_SILVER'
   | 'ACH_CIPHER_MASTER'
@@ -349,19 +357,40 @@ export type AchievementId =
   | 'ACH_CHRONICLER_RECAP';
 
 export type AchievementTier = 'gold' | 'silver' | 'bronze' | 'jade';
-export type AchievementCategory = 'all' | 'speed' | 'puzzle' | 'secret' | 'mastery';
+export type AchievementCategory =
+  | 'all'
+  | 'milestone'
+  | 'puzzle'
+  | 'exploration'
+  | 'tactics'
+  | 'speed'
+  | 'mastery'
+  | 'secret';
 
 export interface AchievementDefinition {
   id: AchievementId;
   title: string;
   subtitle: string;
   sealName: string;
-  category: 'speed' | 'puzzle' | 'secret' | 'mastery';
+  category: 'milestone' | 'puzzle' | 'exploration' | 'tactics' | 'speed' | 'mastery' | 'secret';
   tier: AchievementTier;
   description: string;
   loreContext: string;
   targetCriteria: string;
-  iconType: 'speed' | 'cipher' | 'secret' | 'accuracy' | 'codex' | 'recap' | 'clues';
+  iconType:
+    | 'speed'
+    | 'cipher'
+    | 'secret'
+    | 'accuracy'
+    | 'codex'
+    | 'recap'
+    | 'clues'
+    | 'first_puzzle'
+    | 'explorer'
+    | 'relic'
+    | 'scholar'
+    | 'sandtable'
+    | 'logistics';
 }
 
 export interface UserAchievement extends AchievementDefinition {
@@ -369,6 +398,7 @@ export interface UserAchievement extends AchievementDefinition {
   progressCurrent: number;
   progressMax: number;
   progressLabel: string;
+  progressPercent?: number;
   unlockedAt?: string;
 }
 

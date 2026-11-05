@@ -44,6 +44,7 @@ import {
   Lock,
   KeyRound,
   Scroll,
+  Trophy,
 } from 'lucide-react';
 
 export const AdventureGameScreen: React.FC = () => {
@@ -68,6 +69,7 @@ export const AdventureGameScreen: React.FC = () => {
     activeCipherPuzzle,
     openDailyMissions,
     openHistoricalMissions,
+    openAchievements,
   } = useGame();
 
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -749,6 +751,21 @@ export const AdventureGameScreen: React.FC = () => {
           </span>
         </button>
 
+        <button
+          onClick={() => {
+            voiceManager.stop();
+            openAchievements();
+          }}
+          className="min-h-[42px] px-2.5 py-2 rounded-xl bg-amber-950/85 hover:bg-amber-900 text-amber-100 border-2 border-amber-500/70 text-xs font-bold flex items-center gap-1 shadow-lg transition-all active:scale-95"
+          title="Xem Kỳ Tích & Huy Chương Dấu Ấn Lịch Sử"
+        >
+          <Trophy className="w-4 h-4 text-amber-300 shrink-0" />
+          <span className="hidden xl:inline">Thành tựu</span>
+          <span className="px-1.5 py-0.2 rounded-full bg-amber-600 text-white text-[10px]">
+            {progress.unlockedAchievementIds?.length || 0}
+          </span>
+        </button>
+
         {/* Nút Bật/Tắt nhanh tổng âm thanh */}
         <button
           onClick={() => {
@@ -922,13 +939,29 @@ export const AdventureGameScreen: React.FC = () => {
               <button
                 onClick={() => {
                   setShowMenuPopover(false);
+                  openAchievements();
+                }}
+                className="w-full text-left px-3 py-2 rounded-lg hover:bg-parchment-200 font-bold text-amber-900 flex items-center justify-between"
+              >
+                <span className="flex items-center gap-2">
+                  <Trophy className="w-4 h-4 text-amber-600" />
+                  <span>Kỳ Tích & Huy Chương Số</span>
+                </span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 font-bold">
+                  {progress.unlockedAchievementIds?.length || 0}
+                </span>
+              </button>
+
+              <button
+                onClick={() => {
+                  setShowMenuPopover(false);
                   setScreen('SUMMARY');
                 }}
                 className="w-full text-left px-3 py-2 rounded-lg hover:bg-parchment-200 font-bold text-crimson flex items-center justify-between"
               >
                 <span className="flex items-center gap-2">
                   <Award className="w-4 h-4 text-crimson" />
-                  <span>Bảng Thành Tựu & Dấu Ấn</span>
+                  <span>Bảng Tổng Kết & Dấu Ấn</span>
                 </span>
                 {progress.chapter1Completed && (
                   <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800 font-bold">

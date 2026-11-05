@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Compass, Crosshair, ArrowLeft, Target, BookOpen, Volume2, VolumeX, ShieldAlert } from 'lucide-react';
+import { Compass, Crosshair, ArrowLeft, Target, BookOpen, Volume2, VolumeX, ShieldAlert, Trophy } from 'lucide-react';
 import type { CoLoaRelicId } from '../../types';
 import { CO_LOA_RELICS } from '../../data/chapterCoLoa';
 
@@ -15,6 +15,8 @@ interface CoLoaHUDProps {
   onExitToMenu: () => void;
   onOpenCodex: () => void;
   onOpenHistoricalMissions?: () => void;
+  onOpenAchievements?: () => void;
+  unlockedAchievementsCount?: number;
   soundEnabled: boolean;
   onToggleSound: () => void;
   onMobileMove: (x: number, y: number) => void;
@@ -32,6 +34,8 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
   onExitToMenu,
   onOpenCodex,
   onOpenHistoricalMissions,
+  onOpenAchievements,
+  unlockedAchievementsCount = 0,
   soundEnabled,
   onToggleSound,
   onMobileMove,
@@ -120,6 +124,19 @@ export const CoLoaHUD: React.FC<CoLoaHUDProps> = ({
             >
               <Compass className="w-3.5 h-3.5 text-amber-200" />
               <span className="hidden sm:inline">Khảo Cổ Nỏ Thần</span>
+            </button>
+          )}
+          {onOpenAchievements && (
+            <button
+              onClick={onOpenAchievements}
+              className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-amber-900/80 hover:bg-amber-800 border border-amber-400/80 text-amber-200 text-xs font-semibold backdrop-blur-md transition-all shadow-md"
+              title="Xem Kỳ Tích & Huy Chương"
+            >
+              <Trophy className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden sm:inline">Kỳ Tích</span>
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-600 text-white text-[10px]">
+                {unlockedAchievementsCount}
+              </span>
             </button>
           )}
           <button

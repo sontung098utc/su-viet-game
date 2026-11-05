@@ -24,6 +24,7 @@ import {
   KeyRound,
   Scroll,
   Compass,
+  Trophy,
 } from 'lucide-react';
 import { getScholarRank } from '../../data/dailyMissions';
 
@@ -36,6 +37,7 @@ export const SummaryScreen: React.FC = () => {
     restartAdventure,
     openDailyMissions,
     openHistoricalMissions,
+    openAchievements,
   } = useGame();
 
   // Xáo trộn nhẹ 3 thẻ hình ảnh ban đầu để người chơi sắp xếp kể lại hành trình
@@ -305,8 +307,15 @@ export const SummaryScreen: React.FC = () => {
                   Ghi danh công trạng dựa trên tốc độ hoàn thành, số lượng mật mã đã giải và độ chuẩn xác điều tra.
                 </p>
               </div>
-              <div className="text-xs font-bold text-bronze-dark self-start sm:self-center">
-                Chạm vào ấn tín để soi sáng sử liệu
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                <button
+                  onClick={() => openAchievements()}
+                  className="px-3 py-1.5 rounded-xl bg-amber-900/90 hover:bg-amber-800 text-amber-200 border border-amber-400/70 text-xs font-bold flex items-center gap-1.5 shadow-sm transition-all active:scale-95"
+                  title="Mở Bảng Huy Chương & Kỳ Tích Toàn Năng"
+                >
+                  <Trophy className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Bộ Sưu Tập Huy Chương ({unlockedCount}/{achievements.length})</span>
+                </button>
               </div>
             </div>
 
@@ -314,10 +323,13 @@ export const SummaryScreen: React.FC = () => {
             <div className="flex flex-wrap items-center gap-1.5 p-1 bg-parchment-200/80 rounded-xl mb-4 border border-parchment-300">
               {[
                 { id: 'all', label: `Tất cả (${achievements.length})` },
-                { id: 'speed', label: 'Tốc độ & Thời gian' },
-                { id: 'puzzle', label: 'Mật mã & Trí tuệ' },
-                { id: 'secret', label: 'Cơ mật & Mật thư' },
-                { id: 'mastery', label: 'Sử ký & Toàn thắng' },
+                { id: 'milestone', label: 'Cột mốc' },
+                { id: 'exploration', label: 'Khám phá' },
+                { id: 'tactics', label: 'Chiến thuật' },
+                { id: 'puzzle', label: 'Mật mã' },
+                { id: 'speed', label: 'Tốc độ' },
+                { id: 'secret', label: 'Cơ mật' },
+                { id: 'mastery', label: 'Toàn thắng' },
               ].map((tab) => (
                 <button
                   key={tab.id}

@@ -6,6 +6,97 @@ import type {
 
 export const ACHIEVEMENTS_CATALOG: AchievementDefinition[] = [
   {
+    id: 'ACH_FIRST_PUZZLE',
+    title: 'Khởi Đầu Giải Mã',
+    subtitle: 'First Puzzle Solved',
+    sealName: 'Khai Mật Bảo Ấn',
+    category: 'milestone',
+    tier: 'bronze',
+    iconType: 'first_puzzle',
+    description: 'Giải thành công câu đố mật mã đầu tiên trên hành trình lịch sử (Chiếu thư, Hòm cơ mật hoặc Mật thư ẩn).',
+    loreContext:
+      'Vạn sự khởi đầu nan. Lời mật tín đầu tiên được giải mã đánh dấu bước chân dấn thân của người đưa tin vào dòng chảy lịch sử năm 938.',
+    targetCriteria: 'Giải thành công 1 câu đố mật mã',
+  },
+  {
+    id: 'ACH_HISTORICAL_EXPLORER',
+    title: 'Nhà Thám Hiểm Lịch Sử',
+    subtitle: 'Historical Explorer',
+    sealName: 'Hành Trình Vạn Lý',
+    category: 'exploration',
+    tier: 'silver',
+    iconType: 'explorer',
+    description: 'Đặt chân khám phá các vùng đất lịch sử và mở khóa ít nhất 5 sự kiện sử ký trong Sổ Tay Sử Việt.',
+    loreContext:
+      'Từng tấc đất, bến sông Đằng giang đều in dấu chân của nghĩa quân và nhân dân thời kỳ dựng nền độc lập tự chủ.',
+    targetCriteria: 'Mở khóa từ 5 sự kiện sử ký',
+  },
+  {
+    id: 'ACH_CO_LOA_DISCOVERY',
+    title: 'Cổ Loa Huyền Tích',
+    subtitle: 'Cổ Loa Relic Hunter',
+    sealName: 'Kim Quy Thần Triện',
+    category: 'milestone',
+    tier: 'bronze',
+    iconType: 'relic',
+    description: 'Bước qua Cổng Thời Không vào thành Cổ Loa 3D và tìm thấy ít nhất 1 mảnh ghép cổ vật nỏ thần thiêng.',
+    loreContext:
+      'Di sản thành ốc 9 vòng xoắn và kho tên đồng Cầu Vực là minh chứng rực rỡ cho nền văn minh Âu Lạc thời An Dương Vương.',
+    targetCriteria: 'Thu thập 1 mảnh ghép cổ vật Cổ Loa',
+  },
+  {
+    id: 'ACH_SCHOLAR_RISING',
+    title: 'Bước Chân Sĩ Tử',
+    subtitle: 'Rising Scholar',
+    sealName: 'Văn Miếu Khởi Trí',
+    category: 'milestone',
+    tier: 'bronze',
+    iconType: 'scholar',
+    description: 'Tích lũy từ 100 Điểm Học Giả trở lên từ các nhiệm vụ sử học và câu đố hằng ngày.',
+    loreContext:
+      'Học đạo thánh hiền, hiểu sâu sử sách tiền nhân là nền tảng bền vững để trở thành bậc hiền tài giúp ích cho non sông.',
+    targetCriteria: 'Đạt từ 100 Điểm Học Giả',
+  },
+  {
+    id: 'ACH_STRATEGIST_SANDTABLE',
+    title: 'Chiến Lược Gia Cửa Biển',
+    subtitle: 'Naval Strategist',
+    sealName: 'Đằng Giang Soái Ấn',
+    category: 'tactics',
+    tier: 'gold',
+    iconType: 'sandtable',
+    description: 'Hoàn thành xuất sắc cả 4 quyết sách trên Sa Bàn Tác Chiến Thủy Triều Bạch Đằng.',
+    loreContext:
+      'Đỉnh cao nghệ thuật quân sự của Tiền Ngô Vương: biến hiện tượng nhật triều biển Đông thành vũ khí chôn vùi thủy quân Hoằng Tháo.',
+    targetCriteria: 'Hoàn thành Sa Bàn Bạch Đằng',
+  },
+  {
+    id: 'ACH_ARCHAEOLOGY_MASTER',
+    title: 'Phục Tinh Khảo Cổ',
+    subtitle: 'Master of Ancient Mechanics',
+    sealName: 'Đông Sơn Đồng Triện',
+    category: 'tactics',
+    tier: 'silver',
+    iconType: 'relic',
+    description: 'Lắp ráp trọn vẹn 4 chi tiết lẫy nỏ đồng Đông Sơn và hoàn thành thí nghiệm khí động học mũi tên 3 cạnh Cầu Vực.',
+    loreContext:
+      'Khảo cổ học hiện đại đã chứng minh: Nỏ Thần chính là đỉnh cao kỹ thuật đúc đồng và đạn đạo của người Âu Lạc thời An Dương Vương.',
+    targetCriteria: 'Hoàn thành giải phẫu Nỏ Thần Cổ Loa',
+  },
+  {
+    id: 'ACH_LOGISTICS_SUPPORTER',
+    title: 'Hậu Phương Toàn Dân',
+    subtitle: 'Logistics Champion',
+    sealName: 'Toàn Dân Binh Phù',
+    category: 'tactics',
+    tier: 'bronze',
+    iconType: 'logistics',
+    description: 'Hoàn tất cả 3 trạm hậu cần dân gian: đẵn gỗ lim rừng Yên Hưng, quạt bễ tôi đai sắt, và trét vôi trộn dầu rái thuyền nan.',
+    loreContext:
+      '“Sức mạnh của muôn dân là thành trì vững chắc nhất.” Chiến thắng Bạch Đằng ngàn thu ghi ơn sự đóng góp của từng người dân bình dị.',
+    targetCriteria: 'Hoàn thành 3 trạm hậu cần dân gian',
+  },
+  {
     id: 'ACH_SPEED_GOLD',
     title: 'Bạch Đằng Thần Tốc',
     subtitle: 'Kỷ Lục Hoàn Thành Thần Hành',
@@ -194,8 +285,87 @@ export const evaluateAchievements = (
   const secretCiphers = ['CIPHER_SECRET_WELL', 'CIPHER_SECRET_SHRINE', 'CIPHER_SECRET_PITCH'];
   const solvedSecretCount = secretCiphers.filter((id) => solved.includes(id as any)).length;
 
-  return ACHIEVEMENTS_CATALOG.map((def) => {
+  const raw = ACHIEVEMENTS_CATALOG.map((def): UserAchievement => {
     switch (def.id) {
+      case 'ACH_FIRST_PUZZLE': {
+        const isUnlocked = solved.length >= 1;
+        return {
+          ...def,
+          isUnlocked,
+          progressCurrent: Math.min(1, solved.length),
+          progressMax: 1,
+          progressLabel: isUnlocked ? 'Đã giải thành công' : '0/1 Mật mã',
+        };
+      }
+      case 'ACH_HISTORICAL_EXPLORER': {
+        const factCount = facts.length;
+        const isUnlocked = factCount >= 5;
+        return {
+          ...def,
+          isUnlocked,
+          progressCurrent: Math.min(5, factCount),
+          progressMax: 5,
+          progressLabel: `${Math.min(5, factCount)}/5 Sự kiện sử ký`,
+        };
+      }
+      case 'ACH_CO_LOA_DISCOVERY': {
+        const shardCount = progress.coLoaProgress?.collectedShards?.length || 0;
+        const isUnlocked = shardCount >= 1 || Boolean(progress.coLoaProgress?.chapterCompleted);
+        return {
+          ...def,
+          isUnlocked,
+          progressCurrent: isUnlocked ? 1 : 0,
+          progressMax: 1,
+          progressLabel: isUnlocked ? 'Đã tìm thấy cổ vật' : '0/1 Mảnh ghép',
+        };
+      }
+      case 'ACH_SCHOLAR_RISING': {
+        const points = progress.scholarPoints || 0;
+        const isUnlocked = points >= 100;
+        return {
+          ...def,
+          isUnlocked,
+          progressCurrent: Math.min(100, points),
+          progressMax: 100,
+          progressLabel: `${points}/100 Điểm Học Giả`,
+        };
+      }
+      case 'ACH_STRATEGIST_SANDTABLE': {
+        const isUnlocked = Boolean(
+          progress.historicalMissions?.completedMissionIds?.includes('MISSION_TACTICAL_SANDTABLE')
+        );
+        return {
+          ...def,
+          isUnlocked,
+          progressCurrent: isUnlocked ? 1 : 0,
+          progressMax: 1,
+          progressLabel: isUnlocked ? 'Đã hoàn thành Sa Bàn' : 'Chưa bày trận',
+        };
+      }
+      case 'ACH_ARCHAEOLOGY_MASTER': {
+        const isUnlocked = Boolean(
+          progress.historicalMissions?.completedMissionIds?.includes('MISSION_CO_LOA_BALLISTICS')
+        );
+        return {
+          ...def,
+          isUnlocked,
+          progressCurrent: isUnlocked ? 1 : 0,
+          progressMax: 1,
+          progressLabel: isUnlocked ? 'Đã giải phẫu Nỏ Thần' : 'Chưa phục dựng',
+        };
+      }
+      case 'ACH_LOGISTICS_SUPPORTER': {
+        const isUnlocked = Boolean(
+          progress.historicalMissions?.completedMissionIds?.includes('MISSION_LOGISTICS_AND_PEOPLE')
+        );
+        return {
+          ...def,
+          isUnlocked,
+          progressCurrent: isUnlocked ? 1 : 0,
+          progressMax: 1,
+          progressLabel: isUnlocked ? 'Đã hoàn tất hậu cần' : 'Chưa tiếp tế',
+        };
+      }
       case 'ACH_SPEED_GOLD': {
         const isUnlocked = effectiveTimeSeconds > 0 && effectiveTimeSeconds <= 300;
         return {
@@ -301,5 +471,18 @@ export const evaluateAchievements = (
           progressLabel: '0/1',
         };
     }
+  });
+
+  return raw.map((item) => {
+    const percent =
+      item.progressMax > 0
+        ? Math.min(100, Math.round((item.progressCurrent / item.progressMax) * 100))
+        : item.isUnlocked
+        ? 100
+        : 0;
+    return {
+      ...item,
+      progressPercent: item.isUnlocked ? 100 : percent,
+    };
   });
 };

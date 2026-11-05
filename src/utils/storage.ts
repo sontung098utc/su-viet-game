@@ -63,6 +63,7 @@ export const DEFAULT_USER_PROGRESS: UserProgress = {
   historicalMissions: {
     completedMissionIds: [],
   },
+  unlockedAchievementIds: [],
   lastSavedAt: new Date().toISOString(),
 };
 
@@ -147,6 +148,9 @@ export const storage = {
         historicalMissions: parsed.historicalMissions && Array.isArray(parsed.historicalMissions.completedMissionIds)
           ? parsed.historicalMissions
           : DEFAULT_USER_PROGRESS.historicalMissions,
+        unlockedAchievementIds: Array.isArray(parsed.unlockedAchievementIds)
+          ? parsed.unlockedAchievementIds
+          : [],
       };
     } catch (err) {
       console.warn('Lỗi khi tải tiến trình từ localStorage, khôi phục mặc định:', err);

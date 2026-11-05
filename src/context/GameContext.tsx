@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
 import type {
   UserProgress,
   GameMode,
@@ -12,11 +12,13 @@ import type {
   CipherPuzzleId,
   DailyExplorationTarget,
   HistoricalMissionId,
+  UserAchievement,
 } from '../types';
 import { storage, DEFAULT_USER_PROGRESS } from '../utils/storage';
 import { sound } from '../utils/sound';
 import { voiceManager } from '../utils/voiceManager';
 import { getDailyMissionsForDate, DAILY_COMPLETION_BONUS_POINTS } from '../data/dailyMissions';
+import { evaluateAchievements } from '../data/achievements';
 
 interface AdvanceQuestOptions {
   addItems?: InventoryItemId[];
@@ -76,6 +78,11 @@ interface GameContextType {
     score: number,
     details?: any
   ) => void;
+  isAchievementsOpen: boolean;
+  openAchievements: () => void;
+  closeAchievements: () => void;
+  newAchievementToast: UserAchievement | null;
+  clearAchievementToast: () => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -86,12 +93,18 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isDailyMissionsOpen, setIsDailyMissionsOpen] = useState(false);
   const [isHistoricalMissionsOpen, setIsHistoricalMissionsOpen] = useState(false);
   const [activeHistoricalMissionId, setActiveHistoricalMissionId] = useState<HistoricalMissionId | null>(null);
+  const [isAchievementsOpen, setIsAchievementsOpen] = useState(false);
+  const [newAchievementToast, setNewAchievementToast] = useState<UserAchievement | null>(null);
   const [selectedFactId, setSelectedFactId] = useState<string | null>(null);
   const [hasSavedGame, setHasSavedGame] = useState<boolean>(() => storage.hasSavedGame());
   const [newFactToast, setNewFactToast] = useState<string | null>(null);
   const [newClueToast, setNewClueToast] = useState<ClueId | null>(null);
   const [isFreshCharacterSetup, setIsFreshCharacterSetup] = useState<boolean>(false);
   const [activeCipherPuzzle, setActiveCipherPuzzle] = useState<CipherPuzzleId | null>(null);
+
+  const unlockedAchievementIdsRef = useRef<Set<string>>(
+    new Set(storage.load().unlockedAchievementIds || [])
+  );
 
   useEffect(() => {
     const audioCfg: AudioMixSettings = progress.audioSettings || {
@@ -656,6 +669,54 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     [updateProgress]
   );
 
+  const openAchievements = useCallback(() => {
+    sound.playClick();
+    setIsAchievementsOpen(true);
+  }, []);
+
+  const closeAchievements = useCallback(() => {
+    sound.playClick();
+    setIsAchievementsOpen(false);
+  }, []);
+
+  const clearAchievementToast = useCallback(() => {
+    setNewAchievementToast(null);
+  }, []);
+
+  // Theo dõi mở khóa thành tựu theo thời gian thực và thông báo cho người chơi
+  useEffect(() => {
+    const elapsed = progress.totalPlayTimeSeconds || 240;
+    const all = evaluateAchievements(progress, elapsed);
+    const newlyUnlocked: UserAchievement[] = [];
+
+    all.forEach((ach) => {
+      if (ach.isUnlocked && !unlockedAchievementIdsRef.current.has(ach.id)) {
+        unlockedAchievementIdsRef.current.add(ach.id);
+        newlyUnlocked.push(ach);
+      }
+    });
+
+    if (newlyUnlocked.length > 0) {
+      sound.playSuccess();
+      setNewAchievementToast(newlyUnlocked[newlyUnlocked.length - 1]);
+      updateProgress((prev) => ({
+        ...prev,
+        unlockedAchievementIds: Array.from(unlockedAchievementIdsRef.current),
+      }));
+    }
+  }, [
+    progress.solvedCiphers,
+    progress.collectedClues,
+    progress.discoveredFacts,
+    progress.challengeAttempts,
+    progress.historicalMissions,
+    progress.scholarPoints,
+    progress.coLoaProgress,
+    progress.completedRecapOrder,
+    progress.chapter1Completed,
+    updateProgress,
+  ]);
+
   return (
     <GameContext.Provider
       value={{
@@ -702,6 +763,11 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         openHistoricalMissions,
         closeHistoricalMissions,
         recordHistoricalMissionCompletion,
+        isAchievementsOpen,
+        openAchievements,
+        closeAchievements,
+        newAchievementToast,
+        clearAchievementToast,
       }}
     >
       {children}

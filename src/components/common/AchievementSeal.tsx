@@ -220,6 +220,71 @@ export const AchievementSeal: React.FC<AchievementSealProps> = ({
           </g>
         );
 
+      case 'first_puzzle':
+        return (
+          <g>
+            <circle cx="42" cy="40" r="10" stroke={colors.primary} strokeWidth="3" fill="none" />
+            <circle cx="42" cy="40" r="4" fill={isUnlocked ? '#FACC15' : colors.accent} />
+            <path d="M 50 44 L 66 60 L 62 64 L 58 60 L 56 62 L 52 58 L 56 54 L 48 46" fill={colors.primary} />
+            <polygon points="68,62 72,58 64,50" fill={colors.primary} />
+          </g>
+        );
+
+      case 'explorer':
+        return (
+          <g>
+            <circle cx="50" cy="50" r="22" stroke={colors.primary} strokeWidth="2.5" fill="none" strokeDasharray="4 2" />
+            <polygon points="50,22 55,46 50,44 45,46" fill={isUnlocked ? '#EF4444' : colors.primary} />
+            <polygon points="50,78 55,54 50,56 45,54" fill={colors.primary} />
+            <polygon points="22,50 46,45 44,50 46,55" fill={colors.accent} />
+            <polygon points="78,50 54,45 56,50 54,55" fill={colors.accent} />
+            <circle cx="50" cy="50" r="4.5" fill={isUnlocked ? '#FACC15' : '#1C1917'} />
+          </g>
+        );
+
+      case 'relic':
+        return (
+          <g>
+            <path d="M 32 36 L 48 30 L 68 36 L 68 56 L 32 56 Z" fill={colors.accent} stroke={colors.primary} strokeWidth="2.5" />
+            <circle cx="50" cy="42" r="5" fill={isUnlocked ? '#10B981' : colors.primary} />
+            <path d="M 50 56 L 50 72 L 44 70" stroke={colors.primary} strokeWidth="3" fill="none" strokeLinecap="round" />
+            <polygon points="62,24 66,28 58,36 54,32" fill={isUnlocked ? '#FACC15' : colors.primary} />
+          </g>
+        );
+
+      case 'scholar':
+        return (
+          <g>
+            <ellipse cx="50" cy="44" rx="16" ry="10" fill={colors.accent} stroke={colors.primary} strokeWidth="2" />
+            <rect x="42" y="26" width="16" height="18" rx="3" fill={colors.accent} stroke={colors.primary} strokeWidth="2" />
+            <path d="M 34 44 C 20 40 14 30 18 24 C 24 26 28 34 36 38" fill={colors.primary} />
+            <path d="M 66 44 C 80 40 86 30 82 24 C 76 26 72 34 64 38" fill={colors.primary} />
+            <line x1="30" y1="72" x2="68" y2="72" stroke={colors.primary} strokeWidth="3" strokeLinecap="round" />
+            <polygon points="50,60 54,70 46,70" fill={isUnlocked ? '#FACC15' : colors.primary} />
+          </g>
+        );
+
+      case 'sandtable':
+        return (
+          <g>
+            <polygon points="46,74 50,26 54,74" fill={colors.accent} stroke={colors.primary} strokeWidth="2" />
+            <polygon points="48,26 50,20 52,26" fill={isUnlocked ? '#FACC15' : colors.primary} />
+            <path d="M 22 58 Q 36 50 50 58 T 78 58" stroke={isUnlocked ? '#38BDF8' : colors.primary} strokeWidth="3" fill="none" />
+            <path d="M 22 68 Q 36 60 50 68 T 78 68" stroke={isUnlocked ? '#0284C7' : colors.accent} strokeWidth="2.5" fill="none" />
+          </g>
+        );
+
+      case 'logistics':
+        return (
+          <g>
+            <rect x="28" y="52" width="44" height="16" rx="2" fill={colors.accent} stroke={colors.primary} strokeWidth="2" />
+            <polygon points="28,52 20,46 28,46" fill={colors.accent} stroke={colors.primary} strokeWidth="1.5" />
+            <line x1="38" y1="28" x2="62" y2="48" stroke={colors.primary} strokeWidth="4" strokeLinecap="round" />
+            <rect x="56" y="24" width="18" height="12" rx="2" fill={colors.primary} transform="rotate(40 65 30)" />
+            <circle cx="50" cy="40" r="3.5" fill={isUnlocked ? '#F97316' : colors.accent} />
+          </g>
+        );
+
       case 'recap':
       default:
         // Cờ hiệu chiến thắng Bạch Đằng & Trống đồng
