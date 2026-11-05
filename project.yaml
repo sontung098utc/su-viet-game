@@ -1,0 +1,26 @@
+# CCGS project configuration for Mật Mã Sử Việt (Sử Việt Game)
+schema_version: 1
+
+project:
+  name: "Mật Mã Sử Việt"
+  description: "Trò chơi phiêu lưu giải đố lịch sử Việt Nam - Trận chiến Bạch Đằng & Nỏ thần Cổ Loa"
+  genre: "historical-adventure-puzzle"
+  target_platforms:
+    - web
+    - mobile-web
+
+engine:
+  name: "custom-web"
+  language: "typescript"
+  framework: "react-19"
+  libraries:
+    - "three.js"
+    - "phaser-4"
+    - "tailwindcss"
+    - "vite"
+  build_command: "npm run build"
+  test_command: "npm test"
+
+modes:
+  rigor: "minimal"
+  automation: "collaborative"
