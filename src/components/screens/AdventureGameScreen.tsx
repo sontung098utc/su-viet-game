@@ -18,6 +18,7 @@ import type { CipherPuzzleId, DialogueLine, VisualClue } from '../../types';
 import { CharacterPortrait } from '../game/Portraits';
 import { VirtualControls } from '../game/VirtualControls';
 import { voiceManager, type VoicePlaybackState } from '../../utils/voiceManager';
+import { ClimaxBattleModal } from '../game/ClimaxBattleModal';
 import {
   BookOpen,
   Compass,
@@ -70,6 +71,7 @@ export const AdventureGameScreen: React.FC = () => {
     openDailyMissions,
     openHistoricalMissions,
     openAchievements,
+    unlockAchievement,
   } = useGame();
 
   const gameContainerRef = useRef<HTMLDivElement>(null);
@@ -88,6 +90,13 @@ export const AdventureGameScreen: React.FC = () => {
   // Hệ thống gợi ý tăng dần 3 mức (0 = ẩn, 1 = mức 1, 2 = mức 2, 3 = mức 3)
   const [hintLevel, setHintLevel] = useState<0 | 1 | 2 | 3>(0);
   const [showClueNotebook, setShowClueNotebook] = useState(false);
+  const [isClimaxBattleOpen, setIsClimaxBattleOpen] = useState(false);
+
+  useEffect(() => {
+    if (progress.questStage === 'STAGE_CLIMAX_BATTLE') {
+      setIsClimaxBattleOpen(true);
+    }
+  }, [progress.questStage]);
   const [showMenuPopover, setShowMenuPopover] = useState(false);
   const [showAudioPopover, setShowAudioPopover] = useState(false);
   const [isHudCollapsed, setIsHudCollapsed] = useState(false);
@@ -1240,6 +1249,19 @@ export const AdventureGameScreen: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Màn Chơi Cao Trào Tương Tác Quyết Chiến Đằng Giang Năm 938 */}
+      <ClimaxBattleModal
+        isOpen={isClimaxBattleOpen}
+        onUnlockDrummerAchievement={() => {
+          unlockAchievement('ACH_CLIMAX_DRUMMER');
+        }}
+        onComplete={() => {
+          setIsClimaxBattleOpen(false);
+          advanceQuest('STAGE_9_COMPLETED', { completedChapter: true });
+          setScreen('SUMMARY');
+        }}
+      />
     </div>
   );
 };

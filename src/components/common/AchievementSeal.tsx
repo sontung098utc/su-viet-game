@@ -285,6 +285,29 @@ export const AchievementSeal: React.FC<AchievementSealProps> = ({
           </g>
         );
 
+      case 'drum':
+        return (
+          <g>
+            <circle cx="50" cy="50" r="22" stroke={colors.primary} strokeWidth="2.5" fill="none" />
+            <circle cx="50" cy="50" r="16" stroke={colors.accent} strokeWidth="1.5" fill="none" strokeDasharray="3 2" />
+            <circle cx="50" cy="50" r="6" fill={isUnlocked ? '#FACC15' : colors.primary} />
+            {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+              <line
+                key={deg}
+                x1={50 + 7 * Math.cos((deg * Math.PI) / 180)}
+                y1={50 + 7 * Math.sin((deg * Math.PI) / 180)}
+                x2={50 + 15 * Math.cos((deg * Math.PI) / 180)}
+                y2={50 + 15 * Math.sin((deg * Math.PI) / 180)}
+                stroke={isUnlocked ? '#FACC15' : colors.primary}
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            ))}
+            <line x1="28" y1="28" x2="42" y2="42" stroke={colors.accent} strokeWidth="3" strokeLinecap="round" />
+            <line x1="72" y1="28" x2="58" y2="42" stroke={colors.accent} strokeWidth="3" strokeLinecap="round" />
+          </g>
+        );
+
       case 'recap':
       default:
         // Cờ hiệu chiến thắng Bạch Đằng & Trống đồng

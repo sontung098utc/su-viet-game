@@ -16,6 +16,7 @@ import {
   CheckCircle2,
   AlertCircle,
   HelpCircle,
+  AlertTriangle,
 } from 'lucide-react';
 
 export const CipherPuzzleModal: React.FC = () => {
@@ -43,6 +44,13 @@ export const CipherPuzzleModal: React.FC = () => {
   const [tideChoice1, setTideChoice1] = useState<string>('');
   const [tideChoice2, setTideChoice2] = useState<string>('');
   const [tideFeedback, setTideFeedback] = useState<string | null>(null);
+  const [whatIfScenario, setWhatIfScenario] = useState<{
+    title: string;
+    warning: string;
+    historicalQuote: string;
+    sourceBook: string;
+    commentary: string;
+  } | null>(null);
 
   if (!activeCipherPuzzle) return null;
 
@@ -99,8 +107,10 @@ export const CipherPuzzleModal: React.FC = () => {
     }
   };
 
-  // 3. Kiểm tra Trận Đồ Bia Đá Thủy Triều
+  // 3. Kiểm tra Trận Đồ Bia Đá Thủy Triều & Phân Tích Giả Định Lịch Sử (What-If)
   const handleSolveTideStele = () => {
+    setWhatIfScenario(null);
+
     if (tideChoice1 === 'BAIT_HIGH' && tideChoice2 === 'STRIKE_EBB') {
       sound.playSuccess();
       try {
@@ -115,7 +125,34 @@ export const CipherPuzzleModal: React.FC = () => {
       setTideFeedback('Chính xác! Đúng quy luật thủy triều: Nước lên dụ địch vào cọc ngầm — Nước rút dốc quân tổng phản công!');
     } else {
       sound.playClick();
-      setTideFeedback('Chiến thuật chưa khớp với sử liệu! Lúc nước triều dâng giấu bãi cọc thì nên làm gì? Và lúc nước triều rút mạnh thì xuất kích ra sao?');
+      // Phân tích Giả định Lịch Sử (What-If) chi tiết
+      if (tideChoice1 === 'ATTACK_HIGH') {
+        setWhatIfScenario({
+          title: 'GIẢ ĐỊNH LỊCH SỬ THẤT BẠI: ĐÂM VA TRỰC DIỆN KHI TRIỀU DÂNG ĐỈNH',
+          warning:
+            'Thất bại thảm khốc! Thuyền chiến quân Nam Hán có thành cao, đáy lớn, chở nhiều quân binh và máy bắn đá. Nếu đem quân đâm va trực diện khi nước triều sâu mênh mông, quân ta sẽ lấy đoản binh chọi trường trận, mất đi thế chủ động và rơi vào thế bất lợi nghiêm trọng!',
+          historicalQuote:
+            '“Tiền Ngô Vương bảo các tướng rằng: Hoằng Tháo là một đứa trẻ dại, đem quân từ xa đến, lính mỏi mệt... Song họ có lợi ở thuyền to, nếu ta không phòng bị trước thì thế được thua chưa biết ra sao. Nếu sai người vót nhọn cọc gỗ, đầu bịt sắt đóng ngầm ở cửa biển, thuyền giặc nhân khi nước triều lên tiến vào bên trong hàng cọc, bấy giờ ta dốc quân đánh, không kế gì hơn kế ấy cả.”',
+          sourceBook: 'Đại Việt Sử Ký Toàn Thư (Ngoại kỷ Quyển V, Kỷ nhà Ngô, Tiền Ngô Vương)',
+          commentary:
+            'Sử thần Lê Văn Hưu bình luận: “Ngô Quyền cứu nước giúp dân, giết tên nghịch tặc Kiều Công Tiễn, phá được mưu gian của nhà Nam Hán... Mưu lược ấy thật là tài giỏi, đánh một trận mà dứt được họa ngoại xâm nghìn năm!”',
+        });
+        setTideFeedback('Chiến thuật sai lầm! Hãy đọc phân tích Giả Định Lịch Sử bên dưới để nắm vững dụng binh của Tiền Ngô Vương.');
+      } else if (tideChoice2 === 'RETREAT_EBB') {
+        setWhatIfScenario({
+          title: 'GIẢ ĐỊNH LỊCH SỬ THẤT BẠI: BỎ LỠ THỜI KHẮC VÀNG TỔNG PHẢN CÔNG',
+          warning:
+            'Bỏ lỡ cơ hội ngàn năm! Lúc nước triều rút mạnh là thời điểm quyết định duy nhất bãi cọc nhô lên đâm thủng đáy thuyền giặc, và dòng nước xiết làm thuyền giặc mắc cạn hoảng loạn. Nếu thu quân phòng thủ lúc này, giặc sẽ kịp chỉnh đốn đội hình thoát ra biển, kế sách cọc ngầm hoàn toàn thất bại!',
+          historicalQuote:
+            '“Đợi khi nước triều rút, Quyền bèn dốc toàn quân đánh quật lại. Thuyền giặc quay đầu tháo chạy, va vào cọc nhọn bịt sắt ngầm, vỡ đắm quá nửa, Hoằng Tháo chết đuối, quân Nam Hán tan rã hoàn toàn.”',
+          sourceBook: 'Khâm Định Việt Sử Thông Giám Cương Mục (Tiền biên Quyển V)',
+          commentary:
+            'Nghệ thuật quân sự Bạch Đằng nằm ở sự phối hợp chuẩn xác tuyệt đối giữa bãi cọc ngầm và khoảnh khắc đổi dòng của con nước triều.',
+        });
+        setTideFeedback('Chiến thuật sai lầm! Thủy triều rút là lúc tổng phản công, không được rút lui phòng thủ!');
+      } else {
+        setTideFeedback('Hãy lựa chọn đầy đủ chiến thuật cho cả 2 pha con nước: Lúc nước triều dâng và lúc nước triều rút!');
+      }
     }
   };
 
@@ -443,6 +480,36 @@ export const CipherPuzzleModal: React.FC = () => {
                 >
                   <AlertCircle className="w-4 h-4 shrink-0" />
                   <span>{tideFeedback}</span>
+                </div>
+              )}
+
+              {/* KHỐI GIẢ ĐỊNH LỊCH SỬ (WHAT-IF SCENARIO BREAKDOWN) */}
+              {whatIfScenario && (
+                <div className="p-4 rounded-2xl bg-red-950/90 text-parchment-100 border-2 border-red-500 shadow-xl space-y-2.5 animate-fadeIn">
+                  <div className="flex items-center gap-2 text-xs font-bold text-red-300 uppercase tracking-wider">
+                    <AlertTriangle className="w-4 h-4 text-amber-400 animate-bounce" />
+                    <span>{whatIfScenario.title}</span>
+                  </div>
+                  <p className="text-xs text-red-100 leading-relaxed font-sans">
+                    {whatIfScenario.warning}
+                  </p>
+                  <div className="p-3 rounded-xl bg-black/40 border border-amber-500/40 text-[11px] font-serif italic text-amber-200/95 leading-relaxed">
+                    {whatIfScenario.historicalQuote}
+                    <div className="mt-1 text-[10px] not-italic font-sans text-amber-400/80 font-semibold">
+                      — {whatIfScenario.sourceBook}
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-parchment-200/90 bg-white/5 p-2 rounded-lg border border-white/10 font-sans">
+                    💡 <strong>Bài học quân sự:</strong> {whatIfScenario.commentary}
+                  </div>
+                  <div className="flex justify-end pt-1">
+                    <button
+                      onClick={() => setWhatIfScenario(null)}
+                      className="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs font-bold border border-amber-400/50"
+                    >
+                      Đã Hiểu Bài Học Quân Sự • Thử Lại
+                    </button>
+                  </div>
                 </div>
               )}
 

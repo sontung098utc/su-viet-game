@@ -13,6 +13,7 @@ import type {
   DailyExplorationTarget,
   HistoricalMissionId,
   UserAchievement,
+  AchievementId,
 } from '../types';
 import { storage, DEFAULT_USER_PROGRESS } from '../utils/storage';
 import { sound } from '../utils/sound';
@@ -83,6 +84,7 @@ interface GameContextType {
   closeAchievements: () => void;
   newAchievementToast: UserAchievement | null;
   clearAchievementToast: () => void;
+  unlockAchievement: (id: AchievementId) => void;
 }
 
 const GameContext = createContext<GameContextType | undefined>(undefined);
@@ -683,6 +685,16 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setNewAchievementToast(null);
   }, []);
 
+  const unlockAchievement = useCallback((id: AchievementId) => {
+    if (!unlockedAchievementIdsRef.current.has(id)) {
+      unlockedAchievementIdsRef.current.add(id);
+      updateProgress((prev) => ({
+        ...prev,
+        unlockedAchievementIds: Array.from(unlockedAchievementIdsRef.current),
+      }));
+    }
+  }, [updateProgress]);
+
   // Theo dõi mở khóa thành tựu theo thời gian thực và thông báo cho người chơi
   useEffect(() => {
     const elapsed = progress.totalPlayTimeSeconds || 240;
@@ -768,6 +780,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         closeAchievements,
         newAchievementToast,
         clearAchievementToast,
+        unlockAchievement,
       }}
     >
       {children}

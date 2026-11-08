@@ -365,6 +365,17 @@ export const QUEST_OBJECTIVES: Record<QuestStage, QuestObjectiveConfig> = {
     targetZone: 'RIVER',
     targetId: 'npc_scout',
   },
+  STAGE_CLIMAX_BATTLE: {
+    shortTitle: 'Thúc trống ngũ liên & chỉ huy thủy quân quyết chiến Đằng Giang!',
+    hint: 'Gõ trống đồng Đông Sơn đúng nhịp điệu nâng cao Sĩ Khí quân ta đập tan chiến hạm Hoằng Tháo!',
+    progressiveHints: [
+      'Gợi ý 1: Nhấn phím Space hoặc click chuột / chạm vào mặt trống khi vòng nhịp co lại tâm điểm.',
+      'Gợi ý 2: Đạt chuỗi Combo gõ chuẩn xác để nâng thanh Sĩ Khí Quân Ta lên 100%.',
+      'Gợi ý 3: Thủy quân ta tràn ra bãi sậy kết hợp bãi cọc nhọn đâm thủng thuyền giặc đại thắng vang dội!',
+    ],
+    targetZone: 'RIVER',
+    targetId: 'npc_scout',
+  },
   STAGE_9_COMPLETED: {
     shortTitle: 'Đã hoàn thành nhiệm vụ truyền tin & giải mã trên bến Bạch Đằng năm 938!',
     hint: 'Bạn có thể tự do đi dạo quanh 3 khu vực, trò chuyện với mọi người hoặc mở màn Tổng kết & Sổ tay Sử Việt.',

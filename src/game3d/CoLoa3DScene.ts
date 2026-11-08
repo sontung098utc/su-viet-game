@@ -83,6 +83,22 @@ export class CoLoa3DScene {
   private targetPavilions: { group: THREE.Group; hit: boolean; position: THREE.Vector3; fireLight?: THREE.PointLight }[] = [];
   private activeFlyingArrows: { mesh: THREE.Group; vel: THREE.Vector3; targetPos: THREE.Vector3; life: number }[] = [];
 
+  // --- HỆ THỐNG MỚI: BẢO VỆ VỌNG LÂU - 3 ĐỢT BÈ GỖ QUÂN ĐỊCH TIẾN CÔNG ---
+  private enemyRafts: {
+    group: THREE.Group;
+    pos: THREE.Vector3;
+    speed: number;
+    health: number;
+    isHit: boolean;
+    wave: number;
+    sinkProgress: number;
+  }[] = [];
+  private currentDefenseWave: number = 1;
+  private totalDefenseWaves: number = 3;
+  private destroyedInWave: number = 0;
+  private waveTargetCount: number = 3;
+  private flyingSplinters: { mesh: THREE.Mesh; vel: THREE.Vector3; life: number }[] = [];
+
   // Recoil effect
   private recoilOffset = 0;
 
@@ -244,8 +260,13 @@ export class CoLoa3DScene {
     }
 
     // Ánh sáng môi trường
-    const hemiLight = new THREE.HemisphereLight(0xffdfba, 0x5a3e2a, 0.85);
+    const hemiLight = new THREE.HemisphereLight(0xffdfba, 0x5a3e2a, 0.95);
     this.scene.add(hemiLight);
+
+    // Ánh sáng phụ lấp bóng (Fill light) bảo đảm không có mặt đen unlit
+    const fillLight = new THREE.DirectionalLight(0xfff0dd, 1.15);
+    fillLight.position.set(20, 35, 45);
+    this.scene.add(fillLight);
 
     // Mặt trời hoàng hôn rực rỡ chiếu xiên
     const sunLight = new THREE.DirectionalLight(0xff8c3b, 1.6);
@@ -301,6 +322,7 @@ export class CoLoa3DScene {
       map: this.textures.rampart,
       roughness: 0.95,
       metalness: 0.02,
+      side: THREE.DoubleSide,
     });
 
     const rampartShape = new THREE.Shape();
@@ -1357,6 +1379,8 @@ export class CoLoa3DScene {
     this.cameraYaw = 0;
     this.cameraPitch = 0.04;
 
+    // Khởi động Đợt 1 bè gỗ quân địch tiến công
+    this.spawnEnemyRaftWave(1);
     this.callbacks.onCrossbowReadyToAssemble();
   }
 
@@ -1365,18 +1389,25 @@ export class CoLoa3DScene {
 
     sound.playCrossbowRelease();
     // Giật lùi camera (Recoil)
-    this.recoilOffset = 0.22;
+    this.recoilOffset = 0.24;
 
     const arrowMat = new THREE.MeshStandardMaterial({
       color: 0xffe066,
       emissive: 0xff9900,
-      emissiveIntensity: 1.0,
+      emissiveIntensity: 1.2,
       metalness: 0.9,
     });
 
     const startPos = new THREE.Vector3(0, 4.9, 23.5);
-    const unhitTarget = this.targetPavilions.find((t) => !t.hit) || this.targetPavilions[0];
 
+    // Tính vector hướng ngắm từ Camera
+    const cameraAimDir = new THREE.Vector3(
+      -Math.sin(this.cameraYaw) * Math.cos(this.cameraPitch),
+      Math.sin(this.cameraPitch),
+      -Math.cos(this.cameraYaw) * Math.cos(this.cameraPitch)
+    ).normalize();
+
+    // Bắn chùm 5 mũi tên đồng đại biểu cho Nỏ Thần Liên Châu
     for (let i = 0; i < 5; i++) {
       const arrowGroup = new THREE.Group();
       const shaft = new THREE.Mesh(new THREE.CylinderGeometry(0.03, 0.03, 1.4, 6), arrowMat);
@@ -1389,22 +1420,182 @@ export class CoLoa3DScene {
       arrowGroup.add(head);
 
       arrowGroup.position.copy(startPos);
-      arrowGroup.position.x += (i - 2) * 0.4;
+      arrowGroup.position.x += (i - 2) * 0.35;
       this.scene.add(arrowGroup);
 
-      const targetWithSpread = unhitTarget.position.clone();
-      targetWithSpread.x += (i - 2) * 0.9;
-      targetWithSpread.y += (Math.random() - 0.5) * 0.6;
+      // Độ tỏa chùm tên hình cánh én (Horizontal spread)
+      const spreadDir = cameraAimDir.clone();
+      spreadDir.x += (i - 2) * 0.045;
+      spreadDir.y += (Math.random() - 0.5) * 0.02;
+      spreadDir.normalize();
 
-      const dir = targetWithSpread.clone().sub(startPos).normalize();
-      const speed = 52 + Math.random() * 4;
+      const speed = 58 + Math.random() * 4;
 
       this.activeFlyingArrows.push({
         mesh: arrowGroup,
-        vel: dir.multiplyScalar(speed),
-        targetPos: targetWithSpread,
+        vel: spreadDir.multiplyScalar(speed),
+        targetPos: startPos.clone().addScaledVector(spreadDir, 90),
         life: 0,
       });
+    }
+  }
+
+  // --- HỆ THỐNG MỚI: BẢO VỆ VỌNG LÂU CỔ LOA (3 ĐỢT BÈ GỖ QUÂN ĐỊCH) ---
+  private spawnEnemyRaftWave(wave: number) {
+    this.currentDefenseWave = wave;
+    this.destroyedInWave = 0;
+
+    // Xóa các bè cũ nếu còn
+    this.enemyRafts.forEach((r) => this.scene.remove(r.group));
+    this.enemyRafts = [];
+
+    // Số lượng bè theo từng đợt
+    const waveConfigs: Record<number, { xPositions: number[]; speed: number; zStart: number }> = {
+      1: { xPositions: [-16, 0, 16], speed: 2.2, zStart: 76 },
+      2: { xPositions: [-22, -8, 8, 22], speed: 3.2, zStart: 84 },
+      3: { xPositions: [-24, -12, 0, 12, 24], speed: 4.0, zStart: 92 },
+    };
+
+    const cfg = waveConfigs[wave] || waveConfigs[1];
+    this.waveTargetCount = cfg.xPositions.length;
+
+    cfg.xPositions.forEach((xPos, idx) => {
+      const raft = this.createRaftMesh(xPos, cfg.zStart + idx * 2.5);
+      this.scene.add(raft);
+
+      this.enemyRafts.push({
+        group: raft,
+        pos: raft.position.clone(),
+        speed: cfg.speed,
+        health: 1,
+        isHit: false,
+        wave,
+        sinkProgress: 0,
+      });
+    });
+  }
+
+  private createRaftMesh(x: number, z: number): THREE.Group {
+    const raftGroup = new THREE.Group();
+    raftGroup.position.set(x, 0.4, z);
+
+    // 5 Thân cây gỗ tròn ghép lại
+    for (let l = -2; l <= 2; l++) {
+      const log = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.24, 0.26, 4.4, 8),
+        new THREE.MeshStandardMaterial({ map: this.textures.wood, roughness: 0.85 })
+      );
+      log.rotation.x = Math.PI / 2;
+      log.position.x = l * 0.52;
+      log.castShadow = true;
+      raftGroup.add(log);
+    }
+
+    // Nẹp giằng gỗ ngang
+    const tie1 = new THREE.Mesh(
+      new THREE.BoxGeometry(2.7, 0.15, 0.2),
+      new THREE.MeshStandardMaterial({ color: 0x4a2e18 })
+    );
+    tie1.position.set(0, 0.28, -1.2);
+    const tie2 = tie1.clone();
+    tie2.position.set(0, 0.28, 1.2);
+    raftGroup.add(tie1, tie2);
+
+    // Khiên chắn gỗ bảo vệ lính giặc
+    const shield = new THREE.Mesh(
+      new THREE.BoxGeometry(2.2, 0.85, 0.12),
+      new THREE.MeshStandardMaterial({ color: 0x3d271d, roughness: 0.6 })
+    );
+    shield.position.set(0, 0.7, -1.4);
+    raftGroup.add(shield);
+
+    // Cờ hiệu Triệu Đà (cờ tam giác đỏ viền đen)
+    const mast = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.06, 0.08, 2.6, 6),
+      new THREE.MeshStandardMaterial({ color: 0x222222 })
+    );
+    mast.position.set(0.8, 1.3, -0.6);
+    raftGroup.add(mast);
+
+    const banner = new THREE.Mesh(
+      new THREE.ConeGeometry(0.5, 1.2, 3),
+      new THREE.MeshStandardMaterial({ color: 0x991b1b })
+    );
+    banner.position.set(0.8, 2.0, -0.2);
+    banner.rotation.z = Math.PI / 2;
+    raftGroup.add(banner);
+
+    // Đuốc hiệu lệnh trên bè
+    const torch = new THREE.PointLight(0xff5500, 1.5, 8);
+    torch.position.set(-0.8, 1.2, -0.5);
+    raftGroup.add(torch);
+
+    return raftGroup;
+  }
+
+  private updateEnemyRafts(time: number, delta: number) {
+    for (let i = this.enemyRafts.length - 1; i >= 0; i--) {
+      const raft = this.enemyRafts[i];
+      if (raft.isHit) {
+        // Chìm dần xuống nước sông Hoàng Giang
+        raft.sinkProgress += delta * 1.4;
+        raft.group.position.y -= delta * 1.5;
+        raft.group.rotation.x += delta * 0.8;
+        raft.group.rotation.z += delta * 0.4;
+        if (raft.sinkProgress >= 1.5) {
+          this.scene.remove(raft.group);
+          this.enemyRafts.splice(i, 1);
+        }
+      } else {
+        // Tiến vào chân thành từ xa
+        raft.group.position.z -= raft.speed * delta;
+        raft.pos.copy(raft.group.position);
+        raft.group.position.y = 0.4 + Math.sin(time * 3 + i) * 0.08;
+        raft.group.rotation.y = Math.sin(time * 2 + i) * 0.04;
+
+        // Nếu bè giặc áp sát chân thành (z < 32), đẩy lùi lại
+        if (raft.group.position.z < 32) {
+          raft.group.position.z = 65;
+        }
+      }
+    }
+  }
+
+  private createSplinterExplosion(pos: THREE.Vector3) {
+    const splinterMat = new THREE.MeshStandardMaterial({
+      map: this.textures.wood,
+      roughness: 0.9,
+    });
+    const splinterGeo = new THREE.BoxGeometry(0.18, 0.12, 0.4);
+
+    for (let s = 0; s < 18; s++) {
+      const mesh = new THREE.Mesh(splinterGeo, splinterMat);
+      mesh.position.copy(pos);
+      this.scene.add(mesh);
+
+      const vel = new THREE.Vector3(
+        (Math.random() - 0.5) * 14,
+        Math.random() * 8 + 3,
+        (Math.random() - 0.5) * 14
+      );
+
+      this.flyingSplinters.push({ mesh, vel, life: 0 });
+    }
+  }
+
+  private updateSplinters(delta: number) {
+    for (let i = this.flyingSplinters.length - 1; i >= 0; i--) {
+      const sp = this.flyingSplinters[i];
+      sp.mesh.position.addScaledVector(sp.vel, delta);
+      sp.vel.y -= 18 * delta; // Trọng lực
+      sp.mesh.rotation.x += delta * 8;
+      sp.mesh.rotation.y += delta * 6;
+      sp.life += delta;
+
+      if (sp.life > 0.85 || sp.mesh.position.y < 0) {
+        this.scene.remove(sp.mesh);
+        this.flyingSplinters.splice(i, 1);
+      }
     }
   }
 
@@ -1418,7 +1609,9 @@ export class CoLoa3DScene {
 
     this.updatePlayerMovement(delta);
     this.updateLightingAndAtmosphere(time, delta);
+    this.updateEnemyRafts(time, delta);
     this.updateFlyingArrows(delta);
+    this.updateSplinters(delta);
     this.checkRaycastInteractions();
     this.updateCompassRadar();
 
@@ -1457,12 +1650,29 @@ export class CoLoa3DScene {
     this.playerPos.x += this.playerVel.x * delta;
     this.playerPos.z += this.playerVel.z * delta;
 
-    // Giữ trong bán kính thành 42m
+    // Giữ an toàn trong khuôn viên thành Cổ Loa, không để camera đâm vào vách lũy xoắn ốc
     const distFromCenter = Math.hypot(this.playerPos.x, this.playerPos.z);
-    if (distFromCenter > 42) {
+    if (distFromCenter > 30.0) {
       const angle = Math.atan2(this.playerPos.z, this.playerPos.x);
-      this.playerPos.x = Math.cos(angle) * 42;
-      this.playerPos.z = Math.sin(angle) * 42;
+      this.playerPos.x = Math.cos(angle) * 30.0;
+      this.playerPos.z = Math.sin(angle) * 30.0;
+    }
+    // Giới hạn tuyệt đối phía sau đài nỏ (z <= 23.8) không đâm vào vách đất phía sau
+    if (this.playerPos.z > 23.8) {
+      this.playerPos.z = 23.8;
+    }
+
+    // --- CAPSULE COLLIDER & BOUNDS CHỐNG CLIPPING CAMERA VÀO VÁCH THÀNH & KHOẢNG ĐEN ---
+    // 1. Vọng lâu nỏ thần (x: 0, y: 3.5, z: 22)
+    if (this.playerPos.z >= 18.0 && this.playerPos.z <= 25.0) {
+      if (this.playerPos.y > 2.2) {
+        // Trên sàn đài nỏ: giới hạn chặt trong mép sàn gỗ, không để camera đâm vào vách bờ thành phía sau
+        this.playerPos.x = THREE.MathUtils.clamp(this.playerPos.x, -2.6, 2.6);
+        this.playerPos.z = THREE.MathUtils.clamp(this.playerPos.z, 19.4, 24.0);
+      } else {
+        // Cầu thang dẫn lên đài
+        this.playerPos.x = THREE.MathUtils.clamp(this.playerPos.x, -1.3, 1.3);
+      }
     }
 
     // --- TÍNH TOÁN ĐỘ CAO (Y) MƯỢT MÀ, KHÔNG BAO GIỜ BỊ GIẬT ---
@@ -1529,35 +1739,62 @@ export class CoLoa3DScene {
     }
   }
 
-  // Cập nhật mũi tên đang bay
+  // Cập nhật mũi tên đang bay & va chạm bè gỗ quân địch
   private updateFlyingArrows(delta: number) {
     for (let i = this.activeFlyingArrows.length - 1; i >= 0; i--) {
       const arrow = this.activeFlyingArrows[i];
       arrow.mesh.position.addScaledVector(arrow.vel, delta);
       arrow.life += delta;
 
-      if (arrow.mesh.position.distanceTo(arrow.targetPos) < 2.2 || arrow.life > 1.6) {
-        sound.playArrowHit();
+      let hitRaft = false;
+      // 1. Kiểm tra va chạm với các bè gỗ quân địch đang tiến công
+      for (const raft of this.enemyRafts) {
+        if (!raft.isHit && arrow.mesh.position.distanceTo(raft.group.position) < 3.2) {
+          hitRaft = true;
+          raft.isHit = true;
+          sound.playArrowHit();
+          this.createSplinterExplosion(raft.group.position);
 
-        const target = this.targetPavilions.find((t) => !t.hit);
-        if (target) {
-          target.hit = true;
-          target.group.rotation.x = 0.5;
-          target.group.position.y -= 0.6;
-
-          // Thêm ngọn lửa bốc cháy trên bia tiêu
-          const fireLight = new THREE.PointLight(0xff3300, 3.5, 12);
-          fireLight.position.set(0, 3.0, 0);
-          target.group.add(fireLight);
-          target.fireLight = fireLight;
-
+          this.destroyedInWave++;
           this.targetsDestroyed++;
           this.callbacks.onTargetHit(this.targetsDestroyed);
 
-          if (this.targetsDestroyed >= 3) {
-            sound.playBronzeDrum();
-            sound.playChapterVictory();
-            this.callbacks.onChapterComplete();
+          // Kiểm tra xem đợt hiện tại đã bị tiêu diệt hết chưa
+          if (this.destroyedInWave >= this.waveTargetCount) {
+            if (this.currentDefenseWave < this.totalDefenseWaves) {
+              sound.playChestUnlock();
+              setTimeout(() => {
+                this.spawnEnemyRaftWave(this.currentDefenseWave + 1);
+              }, 1200);
+            } else {
+              // Hoàn thành xuất sắc cả 3 đợt! Đại thắng bảo vệ Vọng Lâu
+              sound.playBronzeDrum();
+              sound.playChapterVictory();
+              this.callbacks.onChapterComplete();
+            }
+          }
+          break;
+        }
+      }
+
+      // 2. Dự phòng: va chạm với các bia tiêu tĩnh hoặc hết thời gian sống
+      if (hitRaft || arrow.mesh.position.distanceTo(arrow.targetPos) < 2.5 || arrow.life > 1.8) {
+        if (!hitRaft) {
+          const target = this.targetPavilions.find((t) => !t.hit);
+          if (target) {
+            target.hit = true;
+            target.group.rotation.x = 0.5;
+            target.group.position.y -= 0.6;
+            this.createSplinterExplosion(target.position);
+            sound.playArrowHit();
+
+            this.targetsDestroyed++;
+            this.callbacks.onTargetHit(this.targetsDestroyed);
+            if (this.targetsDestroyed >= 3) {
+              sound.playBronzeDrum();
+              sound.playChapterVictory();
+              this.callbacks.onChapterComplete();
+            }
           }
         }
 

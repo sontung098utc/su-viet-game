@@ -12,6 +12,7 @@ import type {
 } from '../../types';
 import { DIALOGUE_SCRIPTS } from '../../data/voiceDialogue';
 import { sound } from '../../utils/sound';
+import { calculateDynamicTide, evaluateStealthDetection } from '../../utils/tideAndStealth';
 
 export interface WorldBridgeCallbacks {
   onOpenDialogue: (lines: DialogueLine[], onFinish?: () => void) => void;
@@ -96,6 +97,36 @@ export class BachDangWorldScene extends Phaser.Scene {
   private boatmanSampan!: Phaser.GameObjects.Image;
   private heldItemIndicator!: Phaser.GameObjects.Container;
   private heldItemText!: Phaser.GameObjects.Text;
+
+  // --- HỆ THỐNG ĐỒNG HỒ THỦY TRIỀU ĐỘNG & LÉN LÚT BỤI SẬY ---
+  private dynamicTideSeconds: number = 0;
+  private dynamicTideUI!: Phaser.GameObjects.Container;
+  private dynamicTideText!: Phaser.GameObjects.Text;
+  private dynamicTideProgressBar!: Phaser.GameObjects.Rectangle;
+  private lastTidePhaseAnnounced: string = '';
+
+  private reedZones: Phaser.Geom.Rectangle[] = [];
+  private isPlayerStealthed: boolean = false;
+  private stealthBadgeContainer!: Phaser.GameObjects.Container;
+  private alertBannerContainer!: Phaser.GameObjects.Container;
+  private alertBannerText!: Phaser.GameObjects.Text;
+  private alertCooldownTime: number = 0;
+
+  // 2 Lính Thám Mã Nam Hán (Enemy Patrol AI)
+  private enemyScouts: Array<{
+    id: string;
+    name: string;
+    container: Phaser.GameObjects.Container;
+    sprite: Phaser.GameObjects.Image;
+    coneGraphics: Phaser.GameObjects.Graphics;
+    exclamation: Phaser.GameObjects.Container;
+    waypoints: Array<{ x: number; y: number }>;
+    currentWpIdx: number;
+    facingAngleRad: number;
+    speed: number;
+    isAlert: boolean;
+    alertTimer: number;
+  }> = [];
 
   // State synced from React
   private questStage: QuestStage = 'STAGE_0_PROLOGUE';
@@ -286,6 +317,7 @@ export class BachDangWorldScene extends Phaser.Scene {
     });
 
     this.applyTideVisualState(this.riverTidePhase);
+    this.buildStealthAndTideHUD();
     this.updateQuestMarkers();
     sound.startAmbientBgm();
   }
@@ -575,6 +607,7 @@ export class BachDangWorldScene extends Phaser.Scene {
     this.enemyBoats.push(enemy1, enemy2);
 
     this.createAmbientAnimations();
+    this.buildReedZonesAndFoliage();
   }
 
   private drawBannerPole(x: number, y: number, ribbonColor: number, label: string) {
@@ -1113,6 +1146,9 @@ export class BachDangWorldScene extends Phaser.Scene {
       undefined,
       12
     );
+
+    // 16. BỐ TRÍ 2 LÍNH THÁM MÃ NAM HÁN TUẦN TRA BẾN SÔNG
+    this.buildEnemyScouts();
   }
 
   private placeCharacterSprite(key: string, footX: number, footY: number) {
@@ -1318,6 +1354,7 @@ export class BachDangWorldScene extends Phaser.Scene {
       case 'STAGE_7_SECOND_RIVER_VISIT':
         return 'obj_tide_marker';
       case 'STAGE_8_CLIMAX_SIGNAL':
+      case 'STAGE_CLIMAX_BATTLE':
         return 'npc_scout';
       case 'STAGE_9_COMPLETED':
         return 'npc_scout';
@@ -1787,10 +1824,9 @@ export class BachDangWorldScene extends Phaser.Scene {
                       this.isCutscenePlaying = false;
 
                       this.callbacks.onOpenDialogue(DIALOGUE_SCRIPTS.climax_victory, () => {
-                        this.callbacks.onAdvanceQuest('STAGE_9_COMPLETED', {
+                        this.callbacks.onAdvanceQuest('STAGE_CLIMAX_BATTLE', {
                           removeItems: ['battle_flag', 'order_token'],
                           tidePhase: 'EBBING_CLIMAX',
-                          completedChapter: true,
                         });
                         this.callbacks.onClimaxComplete();
                       });
@@ -1827,8 +1863,13 @@ export class BachDangWorldScene extends Phaser.Scene {
       return;
     }
 
+    // 0. Cập nhật hệ thống Thủy triều động 180s & Lén lút bụi sậy
+    const speedMult = this.updateDynamicTideAndStealth(dt, footX, footY);
+    this.updateEnemyScouts(dt, footX, footY);
+
     // 1. Tính toán vector vận tốc chuẩn hóa (đi chéo không bao giờ nhanh hơn đi ngang, có vùng chết deadzone)
-    const maxSpeed = 230;
+    const baseSpeed = 230;
+    const maxSpeed = baseSpeed * speedMult;
     let rawX = this.joyVector.x;
     let rawY = this.joyVector.y;
 
@@ -1998,5 +2039,340 @@ export class BachDangWorldScene extends Phaser.Scene {
     } else {
       this.guidanceArrow.setVisible(false);
     }
+  }
+
+  // =========================================================================
+  // --- HỆ THỐNG MỚI: BỤI SẬY LÉN LÚT (STEALTH) & THÁM MÃ NAM HÁN (PATROL AI) ---
+  // =========================================================================
+
+  private buildReedZonesAndFoliage() {
+    this.reedZones = [
+      new Phaser.Geom.Rectangle(1210, 930, 95, 110),
+      new Phaser.Geom.Rectangle(1370, 840, 95, 80),
+      new Phaser.Geom.Rectangle(1470, 950, 90, 90),
+    ];
+
+    this.reedZones.forEach((rz) => {
+      this.drawReedThicket(rz.x, rz.y, rz.width, rz.height);
+    });
+  }
+
+  private drawReedThicket(x: number, y: number, w: number, h: number) {
+    const g = this.add.graphics().setDepth(Math.round(y + h * 0.5));
+    g.fillStyle(0x3f5c22, 0.45);
+    g.fillRoundedRect(x, y, w, h, 8);
+
+    // Vẽ các dảnh lau sậy đung đưa
+    g.lineStyle(2, 0x4d7c1b, 0.9);
+    for (let rx = x + 8; rx < x + w - 6; rx += 14) {
+      for (let ry = y + 10; ry < y + h - 6; ry += 20) {
+        const stalkH = 26 + (rx % 10);
+        g.lineBetween(rx, ry + stalkH, rx + 4, ry);
+        // Bông lau
+        g.fillStyle(0xebd5b3, 0.85);
+        g.fillCircle(rx + 4, ry - 2, 3);
+      }
+    }
+  }
+
+  private buildEnemyScouts() {
+    const scoutConfigs = [
+      {
+        id: 'scout_north',
+        name: 'Thám Mã Bắc Bến (Nam Hán)',
+        startX: 1280,
+        startY: 950,
+        waypoints: [
+          { x: 1280, y: 950 },
+          { x: 1460, y: 950 },
+          { x: 1460, y: 1030 },
+          { x: 1280, y: 1030 },
+        ],
+      },
+      {
+        id: 'scout_south',
+        name: 'Thám Mã Nam Bến (Nam Hán)',
+        startX: 1340,
+        startY: 1110,
+        waypoints: [
+          { x: 1340, y: 1110 },
+          { x: 1530, y: 1110 },
+          { x: 1530, y: 1190 },
+          { x: 1340, y: 1190 },
+        ],
+      },
+    ];
+
+    scoutConfigs.forEach((cfg) => {
+      const container = this.add.container(cfg.startX, cfg.startY).setDepth(Math.round(cfg.startY));
+
+      // Bóng dưới chân
+      const shadow = this.add.ellipse(0, -2, 30, 10, 0x1a110b, 0.4);
+
+      // Thân lính do thám giặc (quần áo giáp sắt thẫm màu)
+      const scoutTex = this.tex('spr_char_scout', 'char_commander');
+      const sprite = this.add.image(0, 0, scoutTex).setOrigin(0.5, 0.94).setTint(0xbd3a2b);
+
+      // Mũi giáo & Cờ lệnh giặc Nam Hán
+      const flagG = this.add.graphics();
+      flagG.fillStyle(0x27272a, 1);
+      flagG.fillRect(8, -60, 3, 50);
+      flagG.fillStyle(0x991b1b, 1);
+      flagG.fillTriangle(11, -58, 28, -50, 11, -42);
+
+      // Biểu tượng chấm than cảnh báo (!) khi phát hiện
+      const exclam = this.add.container(0, -78).setVisible(false);
+      const exclamBg = this.add.circle(0, 0, 11, 0xef4444);
+      const exclamTxt = this.add
+        .text(0, 0, '!', {
+          fontFamily: 'Be Vietnam Pro, sans-serif',
+          fontSize: '13px',
+          color: '#FFFFFF',
+          fontStyle: 'bold',
+        })
+        .setOrigin(0.5);
+      exclam.add([exclamBg, exclamTxt]);
+
+      // Nón tầm nhìn Field of View
+      const coneGraphics = this.add.graphics().setDepth(14);
+
+      container.add([shadow, sprite, flagG, exclam]);
+
+      this.enemyScouts.push({
+        id: cfg.id,
+        name: cfg.name,
+        container,
+        sprite,
+        coneGraphics,
+        exclamation: exclam,
+        waypoints: cfg.waypoints,
+        currentWpIdx: 0,
+        facingAngleRad: 0,
+        speed: 72,
+        isAlert: false,
+        alertTimer: 0,
+      });
+    });
+  }
+
+  private buildStealthAndTideHUD() {
+    // 1. Huy hiệu lén lút bụi sậy
+    this.stealthBadgeContainer = this.add.container(0, 0).setDepth(2050).setVisible(false);
+    const badgeBg = this.add.rectangle(0, 0, 190, 22, 0x14532d, 0.92).setStrokeStyle(1.5, 0x86efac);
+    const badgeTxt = this.add
+      .text(0, 0, '🌿 Đang nấp trong bụi sậy (Lén lút)', {
+        fontFamily: 'Be Vietnam Pro, sans-serif',
+        fontSize: '9.5px',
+        color: '#DCFCE7',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+    this.stealthBadgeContainer.add([badgeBg, badgeTxt]);
+
+    // 2. Banner cảnh báo khi bị lính thám mã phát hiện
+    this.alertBannerContainer = this.add
+      .container(1420, 780)
+      .setDepth(2200)
+      .setVisible(false);
+    const alertBg = this.add
+      .rectangle(0, 0, 360, 32, 0x7f1d1d, 0.95)
+      .setStrokeStyle(2, 0xfca5a5);
+    this.alertBannerText = this.add
+      .text(0, 0, '⚠️ THÁM MÃ NAM HÁN ĐÃ PHÁT HIỆN! Mau chạy vào bụi sậy!', {
+        fontFamily: 'Be Vietnam Pro, sans-serif',
+        fontSize: '11px',
+        color: '#FFFFFF',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+    this.alertBannerContainer.add([alertBg, this.alertBannerText]);
+
+    // 3. Thanh Đồng Hồ Thủy Triều Động (180s Real-time Cycle)
+    this.dynamicTideUI = this.add
+      .container(1420, 825)
+      .setDepth(2100);
+
+    const uiBg = this.add
+      .rectangle(0, 0, 340, 26, 0x0f172a, 0.88)
+      .setStrokeStyle(1.5, 0x38bdf8);
+    const trackBar = this.add.rectangle(0, 8, 310, 4, 0x334155);
+    this.dynamicTideProgressBar = this.add
+      .rectangle(-155, 8, 10, 4, 0x38bdf8)
+      .setOrigin(0, 0.5);
+
+    this.dynamicTideText = this.add
+      .text(0, -3, '🌊 Chu kỳ Nhật Triều: Đang tính toán...', {
+        fontFamily: 'Be Vietnam Pro, sans-serif',
+        fontSize: '10px',
+        color: '#E0F2FE',
+        fontStyle: 'bold',
+      })
+      .setOrigin(0.5);
+
+    this.dynamicTideUI.add([uiBg, trackBar, this.dynamicTideProgressBar, this.dynamicTideText]);
+  }
+
+  private updateDynamicTideAndStealth(dt: number, footX: number, footY: number): number {
+    this.dynamicTideSeconds += dt;
+
+    // Kiểm tra người chơi có đang trên Lối Đá Thấp qua lạch nước hay không
+    const onLowCauseway = footX >= 940 && footX <= 1100 && footY >= 1025 && footY <= 1105;
+    const tide = calculateDynamicTide(this.dynamicTideSeconds, onLowCauseway);
+
+    // Cập nhật UI Đồng Hồ Thủy Triều
+    const secondsInCycle = Math.floor(tide.elapsedSeconds % 180);
+    this.dynamicTideText.setText(
+      `🌊 ${tide.phaseLabel} [${secondsInCycle}s / 180s] • Mực nước: ${Math.round(tide.waterLevel * 100)}%`
+    );
+    this.dynamicTideProgressBar.width = Math.max(8, 310 * tide.cycleProgress);
+
+    // Kích hoạt âm thanh khi con nước chuyển pha
+    if (this.lastTidePhaseAnnounced !== tide.phase) {
+      this.lastTidePhaseAnnounced = tide.phase;
+      if (tide.phase === 'HIGH_TIDE' || tide.phase === 'EBBING_TIDE') {
+        sound.playWaveSplash();
+      }
+    }
+
+    // Cập nhật mực nước động trên Lối Đá Thấp
+    if (this.questStage !== 'STAGE_8_CLIMAX_SIGNAL' && this.questStage !== 'STAGE_9_COMPLETED') {
+      const isFlooded = tide.waterLevel > 0.45;
+      this.creekHighTideOverlay.setVisible(tide.waterLevel > 0.25);
+      this.creekHighTideOverlay.setAlpha(Math.min(0.95, tide.waterLevel * 0.98));
+      this.lowCausewayStones.setAlpha(Math.max(0.12, 1 - tide.waterLevel * 0.88));
+      this.lowCausewayFloodBanner.setVisible(isFlooded);
+
+      const colliderBody = this.lowCausewayCollider?.body as Phaser.Physics.Arcade.StaticBody | undefined;
+      if (colliderBody) {
+        colliderBody.enable = tide.speedMultiplier === 0.0;
+      }
+    }
+
+    // Kiểm tra trạng thái Lén lút trong Bụi Sậy (Reed Zones)
+    const inReeds = this.reedZones.some((rz) => rz.contains(footX, footY));
+    this.isPlayerStealthed = inReeds;
+
+    if (inReeds) {
+      this.playerVisual.setAlpha(0.55);
+      this.stealthBadgeContainer.setVisible(true).setPosition(footX, footY - 82);
+    } else {
+      this.playerVisual.setAlpha(1.0);
+      this.stealthBadgeContainer.setVisible(false);
+    }
+
+    // Trả về hệ số tốc độ (1.0 = bình thường, 0.5 = ngập chân chậm 50%, 0.0 = chặn đứng)
+    return tide.speedMultiplier;
+  }
+
+  private updateEnemyScouts(dt: number, footX: number, footY: number) {
+    if (this.alertCooldownTime > 0) {
+      this.alertCooldownTime -= dt;
+    }
+
+    let anyAlert = false;
+
+    this.enemyScouts.forEach((scout) => {
+      const sx = scout.container.x;
+      const sy = scout.container.y;
+      scout.container.setDepth(Math.round(sy));
+
+      if (scout.isAlert) {
+        anyAlert = true;
+        scout.exclamation.setVisible(true);
+
+        // Hướng thẳng về phía người chơi
+        const angleToPlayer = Math.atan2(footY - sy, footX - sx);
+        scout.facingAngleRad = angleToPlayer;
+
+        // Đuổi theo người chơi với tốc độ 155 px/s
+        const chaseSpeed = 155;
+        scout.container.x += Math.cos(angleToPlayer) * chaseSpeed * dt;
+        scout.container.y += Math.sin(angleToPlayer) * chaseSpeed * dt;
+
+        // Nếu người chơi nấp kịp vào bụi sậy hoặc chạy xa > 260px
+        const dist = Math.hypot(footX - scout.container.x, footY - scout.container.y);
+        if (this.isPlayerStealthed || dist > 260) {
+          scout.alertTimer -= dt;
+          if (scout.alertTimer <= 0) {
+            scout.isAlert = false;
+            scout.exclamation.setVisible(false);
+          }
+        }
+
+        // Nếu bắt kịp người chơi (< 32px)
+        if (!this.isPlayerStealthed && dist < 32 && this.alertCooldownTime <= 0) {
+          this.triggerScoutCapture(scout.name);
+          scout.isAlert = false;
+          scout.exclamation.setVisible(false);
+        }
+      } else {
+        scout.exclamation.setVisible(false);
+
+        // Kiểm tra phát hiện người chơi
+        const det = evaluateStealthDetection(
+          { x: footX, y: footY },
+          this.isPlayerStealthed,
+          { x: sx, y: sy, facingAngleRad: scout.facingAngleRad, fovDegrees: 70, fovRange: 165 }
+        );
+
+        if (det.isDetected) {
+          scout.isAlert = true;
+          scout.alertTimer = 4.0;
+          sound.playClick();
+          anyAlert = true;
+        } else {
+          // Tuần tra bình thường theo waypoints
+          const wp = scout.waypoints[scout.currentWpIdx];
+          const distToWp = Math.hypot(wp.x - sx, wp.y - sy);
+          if (distToWp < 12) {
+            scout.currentWpIdx = (scout.currentWpIdx + 1) % scout.waypoints.length;
+          } else {
+            const angle = Math.atan2(wp.y - sy, wp.x - sx);
+            scout.facingAngleRad = angle;
+            scout.container.x += Math.cos(angle) * scout.speed * dt;
+            scout.container.y += Math.sin(angle) * scout.speed * dt;
+          }
+        }
+      }
+
+      // Vẽ Nón Tầm Nhìn (FOV Cone)
+      const cone = scout.coneGraphics;
+      cone.clear();
+      const fovRange = 165;
+      const fovHalfAngle = (35 * Math.PI) / 180;
+      const coneColor = scout.isAlert ? 0xef4444 : 0xf59e0b;
+      const coneAlpha = scout.isAlert ? 0.35 : 0.16;
+
+      cone.fillStyle(coneColor, coneAlpha);
+      cone.lineStyle(1.5, coneColor, scout.isAlert ? 0.8 : 0.4);
+      cone.beginPath();
+      cone.moveTo(scout.container.x, scout.container.y - 12);
+      cone.arc(
+        scout.container.x,
+        scout.container.y - 12,
+        fovRange,
+        scout.facingAngleRad - fovHalfAngle,
+        scout.facingAngleRad + fovHalfAngle
+      );
+      cone.closePath();
+      cone.fillPath();
+      cone.strokePath();
+    });
+
+    this.alertBannerContainer.setVisible(anyAlert);
+  }
+
+  private triggerScoutCapture(scoutName: string) {
+    this.alertCooldownTime = 3.0;
+    this.cameras.main.shake(250, 0.015);
+    sound.playClick();
+
+    // Dịch chuyển người chơi lùi về bờ an toàn lối vào bến sông
+    this.player.setPosition(1160, 850);
+    this.playerVisual.setPosition(1160, 850);
+
+    this.callbacks.onNearbyPromptChange(
+      `⚠️ BỊ ${scoutName.toUpperCase()} PHÁT HIỆN! Bạn đã nhanh chân lẩn thoát về gò đất cao an toàn!`
+    );
   }
 }

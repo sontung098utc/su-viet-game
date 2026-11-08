@@ -14,6 +14,11 @@ import {
   interpolatePlayerText,
 } from '../data/voiceDialogue';
 import { evaluateAchievements, ACHIEVEMENTS_CATALOG } from '../data/achievements';
+import {
+  calculateDynamicTide,
+  evaluateStealthDetection,
+  checkCrossbowArrowHit,
+} from '../utils/tideAndStealth';
 import type { UserProgress, QuestStage } from '../types';
 
 const localStorageMock = (() => {
@@ -655,3 +660,134 @@ describe('8. Hệ Thống Thành Tựu & Dấu Ấn Số (Achievements Module & 
 
 
 
+
+describe('12. Hệ Thống Thủy Triều Động (Dynamic Tide 180s) & Cơ Chế Lén Lút Bụi Sậy (Stealth AI)', () => {
+  it('Chu kỳ nhật triều 180 giây: kiểm tra các pha Nước ròng, Triều dâng, Đỉnh triều và Triều rút với mực nước chính xác', () => {
+    // Pha 1: 0 - 45s (Nước ròng)
+    const lowTide = calculateDynamicTide(20, false);
+    expect(lowTide.phase).toBe('LOW_TIDE');
+    expect(lowTide.waterLevel).toBeLessThan(0.3);
+    expect(lowTide.isLowCausewayFlooded).toBe(false);
+
+    // Pha 2: 45 - 95s (Triều dâng)
+    const risingTide = calculateDynamicTide(70, true);
+    expect(risingTide.phase).toBe('RISING_TIDE');
+    expect(risingTide.waterLevel).toBeGreaterThan(0.4);
+    expect(risingTide.isLowCausewayFlooded).toBe(true);
+    // Khi đang lội nước cạn trên lối đá, tốc độ giảm 50%
+    expect(risingTide.speedMultiplier).toBe(0.5);
+
+    // Pha 3: 95 - 135s (Đỉnh triều)
+    const highTide = calculateDynamicTide(115, true);
+    expect(highTide.phase).toBe('HIGH_TIDE');
+    expect(highTide.waterLevel).toBeGreaterThan(0.9);
+    // Khi ngập sâu hoàn toàn, không thể lội qua (bị chặn đứng)
+    expect(highTide.speedMultiplier).toBe(0.0);
+
+    // Pha 4: 135 - 180s (Triều rút)
+    const ebbingTide = calculateDynamicTide(160, false);
+    expect(ebbingTide.phase).toBe('EBBING_TIDE');
+    expect(ebbingTide.waterLevel).toBeLessThan(0.7);
+  });
+
+  it('Cơ chế Lén Lút Bụi Sậy (Stealth): người chơi nấp trong bụi sậy hoàn toàn vô hình trước tầm nhìn (FOV) lính thám mã Nam Hán', () => {
+    const scout = {
+      x: 1300,
+      y: 1000,
+      facingAngleRad: 0, // Nhìn về phía Đông (bên phải)
+      fovDegrees: 70,
+      fovRange: 165,
+    };
+
+    const playerInFront = { x: 1380, y: 1000 }; // Đứng ngay trước mặt lính giặc (khoảng cách 80px)
+
+    // Khi đứng ngoài bụi sậy: BỊ PHÁT HIỆN!
+    const detectedOutside = evaluateStealthDetection(playerInFront, false, scout);
+    expect(detectedOutside.isDetected).toBe(true);
+    expect(detectedOutside.isStealthed).toBe(false);
+
+    // Khi nấp trong bụi sậy: HOÀN TOÀN VÔ HÌNH!
+    const hiddenInReeds = evaluateStealthDetection(playerInFront, true, scout);
+    expect(hiddenInReeds.isDetected).toBe(false);
+    expect(hiddenInReeds.isStealthed).toBe(true);
+  });
+
+  it('Tầm nhìn lính thám mã (FOV Cone): người chơi đứng phía sau lưng hoặc ngoài cự ly thì không bị phát hiện', () => {
+    const scout = {
+      x: 1300,
+      y: 1000,
+      facingAngleRad: 0, // Nhìn về phía Đông
+      fovDegrees: 70,
+      fovRange: 165,
+    };
+
+    // Người chơi đứng sau lưng lính thám mã (phía Tây)
+    const playerBehind = { x: 1220, y: 1000 };
+    const checkBehind = evaluateStealthDetection(playerBehind, false, scout);
+    expect(checkBehind.inAngle).toBe(false);
+    expect(checkBehind.isDetected).toBe(false);
+
+    // Người chơi đứng quá xa ngoài cự ly nón tầm nhìn (> 165px)
+    const playerFar = { x: 1550, y: 1000 };
+    const checkFar = evaluateStealthDetection(playerFar, false, scout);
+    expect(checkFar.distance).toBeGreaterThan(165);
+    expect(checkFar.isDetected).toBe(false);
+  });
+
+  it('Đạn đạo Nỏ Thần Liên Châu (Raycast hit check): kiểm tra va chạm mũi tên đồng với bè gỗ quân địch', () => {
+    const raft = { x: 0, y: 1.0, z: 75.0 };
+
+    // Mũi tên trúng trong bán kính 2.4m
+    const hitArrow = { x: 0.5, y: 1.2, z: 75.3 };
+    expect(checkCrossbowArrowHit(hitArrow, raft, 2.4)).toBe(true);
+
+    // Mũi tên bắn trượt ra xa
+    const missArrow = { x: 8.0, y: 3.5, z: 60.0 };
+    expect(checkCrossbowArrowHit(missArrow, raft, 2.4)).toBe(false);
+  });
+});
+
+describe('13. Màn Chơi Cao Trào Quyết Chiến Đằng Giang Năm 938 & Thành Tựu Trống Trận', () => {
+  it('Chuyển tiếp đúng giai đoạn STAGE_CLIMAX_BATTLE từ STAGE_8_CLIMAX_SIGNAL trước khi sang STAGE_9_COMPLETED', () => {
+    const stageFlow: QuestStage[] = [
+      'STAGE_7_SECOND_RIVER_VISIT',
+      'STAGE_8_CLIMAX_SIGNAL',
+      'STAGE_CLIMAX_BATTLE',
+      'STAGE_9_COMPLETED',
+    ];
+
+    expect(stageFlow).toContain('STAGE_CLIMAX_BATTLE');
+    expect(QUEST_OBJECTIVES.STAGE_CLIMAX_BATTLE).toBeDefined();
+    expect(QUEST_OBJECTIVES.STAGE_CLIMAX_BATTLE.shortTitle).toContain('trống ngũ liên');
+    expect(QUEST_OBJECTIVES.STAGE_CLIMAX_BATTLE.progressiveHints?.length).toBe(3);
+  });
+
+  it('Mở khóa thành tựu Đằng Giang Lôi Chấn (ACH_CLIMAX_DRUMMER) khi hoàn thành gõ trống trận đạt Sĩ Khí', () => {
+    const battleProgress: UserProgress = {
+      ...DEFAULT_USER_PROGRESS,
+      questStage: 'STAGE_CLIMAX_BATTLE',
+      unlockedAchievementIds: ['ACH_CLIMAX_DRUMMER'],
+    };
+
+    const achievements = evaluateAchievements(battleProgress, 180);
+    const drumAch = achievements.find((a) => a.id === 'ACH_CLIMAX_DRUMMER');
+
+    expect(drumAch).toBeDefined();
+    expect(drumAch?.isUnlocked).toBe(true);
+    expect(drumAch?.tier).toBe('gold');
+    expect(drumAch?.category).toBe('tactics');
+    expect(drumAch?.title).toBe('Đằng Giang Lôi Chấn');
+  });
+
+  it('Trạng thái hoàn thành STAGE_9_COMPLETED tự động thỏa mãn điều kiện Đằng Giang Lôi Chấn', () => {
+    const completedProgress: UserProgress = {
+      ...DEFAULT_USER_PROGRESS,
+      questStage: 'STAGE_9_COMPLETED',
+    };
+
+    const achievements = evaluateAchievements(completedProgress, 200);
+    const drumAch = achievements.find((a) => a.id === 'ACH_CLIMAX_DRUMMER');
+
+    expect(drumAch?.isUnlocked).toBe(true);
+  });
+});

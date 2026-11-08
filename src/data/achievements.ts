@@ -213,6 +213,19 @@ export const ACHIEVEMENTS_CATALOG: AchievementDefinition[] = [
       'Ghi danh chiến công chấm dứt hơn 1.000 năm Bắc thuộc, mở ra kỷ nguyên độc lập tự chủ lâu dài cho dân tộc Việt Nam.',
     targetCriteria: 'Sắp xếp đúng thứ tự tranh lịch sử',
   },
+  {
+    id: 'ACH_CLIMAX_DRUMMER',
+    title: 'Đằng Giang Lôi Chấn',
+    subtitle: 'Chiến Cổ Vang Lừng',
+    sealName: 'Kim Cổ Hùng Oai',
+    category: 'tactics',
+    tier: 'gold',
+    iconType: 'drum',
+    description: 'Thúc trống ngũ liên đạt nhịp độ chuẩn xác và nâng thanh Sĩ Khí quân ta lên 100% trong màn Quyết Chiến Đằng Giang.',
+    loreContext:
+      'Trống đồng thúc giục ba quân dâng trào hào khí, thuyền nhẹ mai phục từ hai bờ bến sậy lao vút ra quật khởi chôn vùi chiến hạm Lưu Hoằng Tháo.',
+    targetCriteria: 'Đạt Sĩ Khí 100% trong màn trống trận Đằng Giang',
+  },
 ];
 
 export const formatDuration = (totalSeconds: number): string => {
@@ -460,6 +473,19 @@ export const evaluateAchievements = (
           progressCurrent: isUnlocked ? 1 : 0,
           progressMax: 1,
           progressLabel: isUnlocked ? 'Đã sắp xếp đúng 3 chặng' : 'Chưa xếp tranh',
+        };
+      }
+      case 'ACH_CLIMAX_DRUMMER': {
+        const isUnlocked = Boolean(
+          progress.unlockedAchievementIds?.includes('ACH_CLIMAX_DRUMMER') ||
+          progress.questStage === 'STAGE_9_COMPLETED'
+        );
+        return {
+          ...def,
+          isUnlocked,
+          progressCurrent: isUnlocked ? 1 : 0,
+          progressMax: 1,
+          progressLabel: isUnlocked ? 'Đã thúc trống trận toàn thắng' : 'Chưa thúc trống trận',
         };
       }
       default:

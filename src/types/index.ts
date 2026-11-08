@@ -165,6 +165,7 @@ export type QuestStage =
   | 'STAGE_6_REPORT_COMMANDER'    // Báo tin cho Đội Trưởng Lê và nhận Cờ Hiệu Xuất Kích
   | 'STAGE_7_SECOND_RIVER_VISIT'  // Quay lại Bến Quan Sát kiểm tra Cột Mốc Đá lúc Nước Lớn
   | 'STAGE_8_CLIMAX_SIGNAL'       // THỬ THÁCH C (Phần 2): Chọn đúng thời điểm chuyển pha Nước Rút để phất Cờ Hiệu cùng Trinh Sát Hải
+  | 'STAGE_CLIMAX_BATTLE'
   | 'STAGE_9_COMPLETED';          // Hoàn thành chương
 
 export type FloodedPathSolution = 'NONE' | 'HIGH_BRIDGE' | 'BOATMAN_FERRY';
@@ -354,7 +355,8 @@ export type AchievementId =
   | 'ACH_PERFECT_INVESTIGATION'
   | 'ACH_ALL_CLUES'
   | 'ACH_HISTORICAL_CODEX'
-  | 'ACH_CHRONICLER_RECAP';
+  | 'ACH_CHRONICLER_RECAP'
+  | 'ACH_CLIMAX_DRUMMER';
 
 export type AchievementTier = 'gold' | 'silver' | 'bronze' | 'jade';
 export type AchievementCategory =
@@ -390,7 +392,8 @@ export interface AchievementDefinition {
     | 'relic'
     | 'scholar'
     | 'sandtable'
-    | 'logistics';
+    | 'logistics'
+    | 'drum';
 }
 
 export interface UserAchievement extends AchievementDefinition {
